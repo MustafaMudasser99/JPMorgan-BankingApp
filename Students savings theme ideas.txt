@@ -1,0 +1,69 @@
+Students savings:
+    - After hours cool off period (after hours savings)
+        - Toggle button in app to turn it on
+        - If you order after certain time, show 30 minutes timer (animated?)
+        - When it ends, display a popup, with confirm button
+        - Async?
+
+        - Transactions started from the banking app itself.
+        - Hard decline? Option to skip?
+
+
+        - common words (Like restaurant, food, fast food, we gonna have a basically additional you could cheque it against)
+        - NLP on company name?
+        - Database of company names? 
+        - Filter out specific categories like food/entertainment etc.
+
+    - Savings pots (similar to Monzo)
+        - Taking small increments of money (1p, 5p etc.) every day / week in order to save money
+            - Focusing on not making a customer feel like they're missing out but definitely make them feel the result when they see how much is saved
+            - Show the customer how much they have saved in an accounts/savings/pots page
+            - Potentially have a goblin in armor (Crypto Knight theme) guarding the pot
+                - Could be animated or static image depending on time/scope
+        - Rounding up purchases (e.g. £2.99 to £3) in bank statement and then putting the additional money rounded up into the savings pot
+            - Customer decides how much they allow to be rounded up
+                - 3 options: nearest pound, nearest 50p, nearest 10p
+        - Savings goals
+            - Customer sets a savings goal, the previous methods try to reach that goal
+            - If at the end of the period, they didn't meet the goal, take money from account to savings pot
+
+    - Mass Transactions
+        - We need a worker system handling transactions off of the UI thread
+        - Potentially a queue system for handling transactions
+            - user transactions take priority (go to the front of the queue)
+            - other transactions happen when worker is free (within reasonable time frame)
+        - Maybe give estimation on transactions based on queue size
+        - Docs File
+        - Example would be for a company paying all of their staff
+        - Admin only
+    
+    - Admin privilege
+        - Admin is an employee of Crypto Knights bank        
+        - Admin can:
+            - Facilitate mass transactions?
+            - Fix errors?
+            - Reverse a transactions?
+
+    - Chatbot - Talk directly to the goblin?
+        - Chat bubble in bottom right corner?
+        - Ask it to perform a function
+            - Does is user asked to use only keywords?
+            - Does the user talk in natural language? <-- harder but better experience
+        - For simplicity:
+            - Could be "Pay" "Person" "amount" and focus on keywords and recognising commands
+            - Respond with "Do you want to PAY PERSON AMOUNT?"
+            - Ask the user to confirm the transaction before executing
+        - Complex ideas, context sensitive commands:
+            - e.g. Pay "My granddaughter" her usual allowance
+            - Would need to recognise patterns, understand family contexts            
+        - Warnings about potential upcoming events e.g. savings goals
+            - Savings goals not being met, goblin will warn that the money will be taken soon
+            - Warn about subscriptions or upcoming payments
+        - Worst case scenario:
+            - glorified FAQ system for everything
+                - Instruct the user how to use the app for whatever they've actually asked for
+                - E.g. pay X to Y - "Please go to the payments page and do the thing"
+    
+    - Name the goblin mascot for the app/bank
+        - I will riot if we dont
+    
