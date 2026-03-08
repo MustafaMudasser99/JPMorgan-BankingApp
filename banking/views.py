@@ -132,6 +132,23 @@ class AccountViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'])
+    def roundups(self, request, pk=None):
+        return Response({'savings': str(10)})
+
+    @action(detail=True, methods=['post'])
+    def enable_roundup(self, request, pk=None):
+        """
+        Enable round-up feature for a specific account.
+        """
+        return Response({ "message": "roundup succesfully enabled" }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def reclaim_roundup(self, request, pk=None):            
+        return Response({
+            "message": "roundup succesfully reclaimed",
+        }, status=status.HTTP_200_OK)
+
 class TransactionViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     
