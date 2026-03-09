@@ -6,7 +6,7 @@ from django.urls import path, include
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from banking.auth_views import LoginView, UserAccountsView
-from banking.template_views import register_api
+from banking.template_views import register_api, TemplateRegistrationView, DashboardView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +27,8 @@ urlpatterns = [
     path('api/register/', register_api, name='api-register'),
     path('api/logout/', lambda request: Response({'detail': 'Successfully logged out.'}), name='api-logout'),
     path('api/user/', UserAccountsView.as_view(), name='api-user'),  # Add this to match frontend request
+    
+    # Web interface routes
+    path('banking/register/', TemplateRegistrationView.as_view(), name='register'),
+    path('banking/dashboard/', DashboardView.as_view(), name='dashboard'),
 ]
