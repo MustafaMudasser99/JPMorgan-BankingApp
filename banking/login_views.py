@@ -20,7 +20,7 @@ class LoginView(View):
         """Display login form"""
         if request.user.is_authenticated:
             return redirect('dashboard')
-        return render(request, 'banking/login.html')
+        return render(request, 'banking/login_signup.html')
     
     def post(self, request):
         """Handle login form submission"""
@@ -29,7 +29,7 @@ class LoginView(View):
         
         if not username or not password:
             messages.error(request, 'Please provide both username and password')
-            return render(request, 'banking/login.html')
+            return render(request, 'banking/login_signup.html')
         
         user = authenticate(username=username, password=password)
         
@@ -45,7 +45,7 @@ class LoginView(View):
             return redirect('dashboard')
         else:
             messages.error(request, 'Invalid username or password')
-            return render(request, 'banking/login.html')
+            return render(request, 'banking/login_signup.html')
 
 def api_login(request):
     """

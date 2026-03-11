@@ -32,7 +32,6 @@ urlpatterns = [
     
     # Web interface routes
     path('banking/login/', WebLoginView.as_view(), name='login'),
-    path('banking/register/', TemplateRegistrationView.as_view(), name='register'),
     path('banking/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('banking/logout/', logout_view, name='logout'),
     path('banking/api-login/', api_login, name='api-login-web'),

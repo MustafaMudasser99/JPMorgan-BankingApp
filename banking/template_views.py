@@ -105,6 +105,7 @@ class TemplateRegistrationView(View):
         
 @method_decorator(login_required, name='dispatch')
 class DashboardView(View):
+    @method_decorator(login_required(login_url='login'))
     def get(self, request):
         accounts = Account.objects.filter(user=request.user)
         total_balance = sum(account.starting_balance for account in accounts)
