@@ -6,7 +6,9 @@ from django.http import JsonResponse
 from django.views import View
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import Account
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
+from .models import Account, Transaction
 from decimal import Decimal
 
 class TemplateRegistrationView(View):
@@ -100,6 +102,24 @@ class TemplateRegistrationView(View):
         except Exception as e:
             messages.error(request, f'Error creating user: {str(e)}')
             return render(request, self.template_name, {})
+        
+@method_decorator(login_required, name='dispatch')
+class DashboardView(View):
+    def get(self, request):
+        accounts = Account.objects.filter(user=request.user)
+        total_balance = sum(account.starting_balance for account in accounts)
+        recent_transactions = Transaction.objects.filter(
+            from_account__in=accounts
+        ).select_related('business').order_by('-timestamp')[:10]
+        total_savings = sum(account.round_up_pot for account in accounts)
+
+        context = {
+            'accounts': accounts,
+            'total_balance': total_balance,
+            'recent_transactions': recent_transactions,
+            'total_savings': total_savings,
+        }
+        return render(request, 'banking/dashboard.html', context)
 
 # API-style functions that don't require REST framework
 def register_api(request):

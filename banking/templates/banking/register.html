@@ -1,0 +1,230 @@
+{% extends 'banking/base.html' %}
+
+{% block title %}Register - Extra Credit Union{% endblock %}
+
+{% block content %}
+    <div class="login-container">
+        <div class="card login-card">
+            <h2>Create Account</h2>
+            <p class="subtitle">Join Extra Credit Union today</p>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" class="login-form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required 
+                           placeholder="Choose a username">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="Create a password">
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email (Optional)</label>
+                    <input type="email" id="email" name="email" 
+                           placeholder="your@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="first_name">First Name (Optional)</label>
+                    <input type="text" id="first_name" name="first_name" 
+                           placeholder="Your first name">
+                </div>
+
+                <div class="form-group">
+                    <label for="last_name">Last Name (Optional)</label>
+                    <input type="text" id="last_name" name="last_name" 
+                           placeholder="Your last name">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Create Account</button>
+            </form>
+
+            <div class="login-footer">
+                <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 60vh;
+        padding: 20px;
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .login-card h2 {
+        margin-bottom: 10px;
+        color: var(--primary-color);
+    }
+
+    .subtitle {
+        color: var(--secondary-color);
+        margin-bottom: 30px;
+    }
+
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .form-group {
+        text-align: left;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    }
+
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 12px;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-primary:hover {
+        background: #0056b3;
+        transform: translateY(-1px);
+    }
+
+    .login-footer {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .login-footer p {
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+
+    .login-footer a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .login-footer a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+        .login-card {
+            padding: 20px;
+        }
+        
+        .form-group input {
+            font-size: 16px; /* Prevent zoom on iOS */
+        }
+    }
+</style>
+
+<script>
+    // Add form validation and smooth interactions
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('.login-form');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+
+        // Add input validation
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+
+            if (usernameInput.value.trim() === '') {
+                showError(usernameInput, 'Username is required');
+                isValid = false;
+            }
+
+            if (passwordInput.value.trim() === '') {
+                showError(passwordInput, 'Password is required');
+                isValid = false;
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+
+        // Clear errors on input
+        [usernameInput, passwordInput].forEach(input => {
+            input.addEventListener('input', function() {
+                clearError(this);
+            });
+        });
+
+        function showError(input, message) {
+            // Remove existing error
+            clearError(input);
+            
+            // Add error styling
+            input.style.borderColor = 'var(--danger-color)';
+            
+            // Create error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-error';
+            errorDiv.style.marginTop = '5px';
+            errorDiv.style.fontSize = '0.85rem';
+            errorDiv.textContent = message;
+            
+            input.parentNode.appendChild(errorDiv);
+        }
+
+        function clearError(input) {
+            input.style.borderColor = 'var(--border-color)';
+            const existingError = input.parentNode.querySelector('.alert-error');
+            if (existingError) {
+                existingError.remove();
+            }
+        }
+    });
+</script>
+{% endblock %}

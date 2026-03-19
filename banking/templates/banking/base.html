@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CryptoKnights Banking{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'banking/css/base.css' %}">
+    {% block styles %}
+    {% endblock %}
+</head>
+
+<body>
+    <header>
+        <nav>
+            <div class="logo">CryptoKnights</div>
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="/banking/dashboard/">Dashboard</a></li>
+                <li><a href="#">Accounts</a></li>
+                <li><a href="#">Transactions</a></li>
+            </ul>
+            <div class="auth-links">
+                {% if request.user.is_authenticated %}
+                    <div class="user-info">
+                        <span class="welcome-text">Welcome, {{ request.user.username }}</span>
+                        <a href="/banking/logout/" class="btn btn-secondary">Logout</a>
+                    </div>
+                {% else %}
+                    <a href="/banking/login/" class="btn btn-secondary">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2026 CryptoKnights Banking. All rights reserved.</p>
+    </footer>
+
+    {% block scripts %}
+    <script>
+        // Authentication state management
+        function getAuthToken() {
+            return localStorage.getItem('access_token');
+        }
+
+        function getUserData() {
+            const userData = localStorage.getItem('user_data');
+            return userData ? JSON.parse(userData) : null;
+        }
+
+        function logout() {
+            // Clear tokens from localStorage
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_data');
+            
+            // Redirect to login page
+            window.location.href = '/banking/login/';
+        }
+        document.addEventListener('DOMContentLoaded', setAuthState);
+    </script>
+    {% endblock %}
+</body>
+</html>
