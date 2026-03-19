@@ -189,13 +189,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def account_transactions(self, request, account_id=None):
         # View all transactions related to a specific account
         try:
-            account = Account.objects.get(id=account_id)
-            
-            # Check if the user has permission to access this account
-            if account.user != request.user and not request.user.is_staff:
-                return Response({"detail": "You don't have permission to access this account"}, 
-                               status=status.HTTP_403_FORBIDDEN)
+            account = Account.objects.get(id=account_id)  
                 
+
             transactions = Transaction.objects.filter(from_account=account)
             serializer = self.get_serializer(transactions, many=True)
             return Response(serializer.data)
@@ -207,11 +203,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         # Summarize spending by category for a given account
         try:
             account = Account.objects.get(id=account_id)
-            
-            # Check if the user has permission to access this account
-            if account.user != request.user and not request.user.is_staff:
-                return Response({"detail": "You don't have permission to access this account"}, 
-                               status=status.HTTP_403_FORBIDDEN)
+                
                 
             # Summarize spending by business category
             spending_summary = Transaction.objects.filter(
