@@ -2,12 +2,14 @@
 URLs for the banking app with additional diagnostic endpoints.
 """
 from django.urls import path, include
+from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .views import AccountViewSet, TransactionViewSet, BusinessViewSet
 from .test_view import TestView
 from .registration_view import UserRegistrationView
+from .template_views import BalanceView, export_transactions_csv
 import logging
 import traceback
 
@@ -68,4 +70,12 @@ urlpatterns += [
     path('debug_shell/', debug_shell),
     # Additional diagnostic endpoint
     path('url-test/', lambda request: JsonResponse({"message": "Banking URLs are being loaded correctly"})),
+    
+    # Template views
+    path('balance/', BalanceView.as_view(), name='balance'),
+    path('export-transactions-csv/', export_transactions_csv, name='export-transactions-csv'),
+    path('dashboard/', lambda request: redirect('balance'), name='dashboard'),
+    path('accounts/', lambda request: redirect('balance'), name='accounts'),
+    path('transactions/', lambda request: redirect('balance'), name='transactions'),
+    path('login/', lambda request: redirect('api-login'), name='login'),
 ]
