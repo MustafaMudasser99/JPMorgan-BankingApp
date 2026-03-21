@@ -70,25 +70,49 @@ class UserAccountTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.get_tokens_for_user(self.regular_user))
         
         # Get accounts list
-        url = reverse('account-list') + '?test_user_can_see_only_own_accounts=true'
+        url = reverse('account-list')
         response = self.client.get(url)
         
-        # Verify status code and that only user's account is returned
+        # Verify status code and that only user's accounts are returned
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        # The account name is now generated based on the username
-        self.assertEqual(response.data[0]['name'].split("'")[0], "regular_user")
+        
+        # Check that all returned accounts belong to the regular user
+        for account in response.data:
+            self.assertEqual(account['user'], self.regular_user.id)
+        
+        # Verify we don't see other users' accounts
+        staff_account_ids = [str(self.another_account.id)]
+        orphan_account_ids = [str(self.orphan_account.id)]
+        
+        account_ids = [account['id'] for account in response.data]
+        for staff_id in staff_account_ids:
+            self.assertNotIn(staff_id, account_ids)
+        
+        for orphan_id in orphan_account_ids:
+            self.assertNotIn(orphan_id, account_ids)
         
     def test_staff_can_see_all_accounts(self):
         # Authenticate as staff user
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.get_tokens_for_user(self.staff_user))
         
         # Get accounts list
-        url = reverse('account-list') + '?test_staff_can_see_all_accounts=true'
+        url = reverse('account-list')
         response = self.client.get(url)
         
-        # Verify status code and that all accounts are returned
+        # Verify status code
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)  # All three accounts
+        
+        # Get all account IDs from the response
+        account_ids = [account['id'] for account in response.data]
+        
+        # Check that staff can see all accounts by verifying IDs
+        self.assertIn(str(self.user_account.id), account_ids,
+                     "Staff should see regular user's account")
+        
+        self.assertIn(str(self.another_account.id), account_ids,
+                     "Staff should see their own account")
+        
+        self.assertIn(str(self.orphan_account.id), account_ids,
+                     "Staff should see orphan accounts")
         
  

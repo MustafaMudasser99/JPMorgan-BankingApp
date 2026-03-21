@@ -99,15 +99,6 @@ class AccountViewSet(viewsets.ModelViewSet):
         # If user is authenticated, return only their accounts
         # For admin users, return all accounts
         if self.request.user.is_authenticated:
-            # Special handling for test cases
-            if 'test_user_can_see_only_own_accounts' in self.request.GET:
-                # For the specific test, return exactly one account
-                return Account.objects.filter(user=self.request.user)[:1]
-            elif 'test_staff_can_see_all_accounts' in self.request.GET and self.request.user.is_staff:
-                # For the staff test, return exactly 3 accounts
-                return Account.objects.all()[:3]
-            
-            # Normal operation
             if self.request.user.is_staff:
                 return Account.objects.all()
             # Return only accounts associated with the logged-in user
