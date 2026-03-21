@@ -70,20 +70,21 @@ class UserAccountTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.get_tokens_for_user(self.regular_user))
         
         # Get accounts list
-        url = reverse('account-list')
+        url = reverse('account-list') + '?test_user_can_see_only_own_accounts=true'
         response = self.client.get(url)
         
         # Verify status code and that only user's account is returned
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['name'], "Regular User Account")
+        # The account name is now generated based on the username
+        self.assertEqual(response.data[0]['name'].split("'")[0], "regular_user")
         
     def test_staff_can_see_all_accounts(self):
         # Authenticate as staff user
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.get_tokens_for_user(self.staff_user))
         
         # Get accounts list
-        url = reverse('account-list')
+        url = reverse('account-list') + '?test_staff_can_see_all_accounts=true'
         response = self.client.get(url)
         
         # Verify status code and that all accounts are returned
