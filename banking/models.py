@@ -23,6 +23,19 @@ class Account(models.Model):
 
     def __str__(self):
         return self.name
+        
+    def get_balance(self):
+        """
+        Calculate the current balance by adding all transactions to the starting balance.
+        """
+        # Get all outgoing transactions (negative amounts)
+        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
+        
+        # Get all incoming transactions (positive amounts)
+        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
+        
+        # Return the balance
+        return self.starting_balance + incoming + outgoing
 
 class Business(models.Model):
     id = models.CharField(primary_key=True, max_length=50)
