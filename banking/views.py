@@ -112,7 +112,6 @@ class AccountViewSet(viewsets.ModelViewSet):
         # For create, update, delete actions, require admin privileges
         elif self.action in ['create', 'update', 'partial_update', 'destroy', 'manager_list']:
             return [IsAdminUser()]
-        return [AllowAny()]
         
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_accounts(self, request):
@@ -148,6 +147,39 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response({
             "message": "roundup succesfully reclaimed",
         }, status=status.HTTP_200_OK)
+    
+    # Queries for current balance and roundup stats:
+    @action(detail=False, methods=['get'], url_path='current-balance')
+    def current_balance(self, request):
+        """
+        Calculates the user's total liquid balance and round-up savings.
+        """
+        user_accounts = Account.objects.filter(user=request.user)
+        # Using aggregate to sum up starting balances and round-up pots
+        totals = user_accounts.aggregate(
+            total_cash=Sum('starting_balance'),
+            total_saved=Sum('round_up_pot')
+        )
+        
+        return Response({
+            "net_worth": (totals['total_cash'] or 0) + (totals['total_saved'] or 0),
+            "cash_balance": totals['total_cash'] or 0,
+            "savings_pot": totals['total_saved'] or 0
+        })
+
+    @action(detail=False, methods=['get'], url_path='roundup-stats')
+    def roundup_stats(self, request):
+        """
+        Returns statistics about the user's round-up savings performance.
+        """
+        user_accounts = Account.objects.filter(user=request.user, round_up_enabled=True)
+        total_saved = user_accounts.aggregate(Sum('round_up_pot'))['round_up_pot__sum'] or 0
+        
+        return Response({
+            "is_enabled": user_accounts.exists(),
+            "total_accumulated": total_saved,
+            "active_saving_accounts": user_accounts.count()
+        })
 
 class TransactionViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
@@ -169,22 +201,52 @@ class TransactionViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
     
     def perform_create(self, serializer):
-        # When creating a transaction, validate that the user owns the from_account
+        # 1. Get account ID from request data
         from_account_id = self.request.data.get('from_account')
         
         try:
-            from_account = Account.objects.get(id=from_account_id)
+            # 2. Get account and check permissions BEFORE saving
+            account = Account.objects.get(id=from_account_id)
             
-            # Check if the user is authorized for this account
-            if from_account.user != self.request.user and not self.request.user.is_staff:
-                raise PermissionError("You don't have permission to create transactions for this account")
-                
-            serializer.save()
-        except Account.DoesNotExist:
-            raise ValueError("Account not found")
-        except PermissionError as e:
-            raise PermissionError(str(e))
+            if account.user != self.request.user and not self.request.user.is_staff:
+                raise PermissionError("You don't have permission for this account.")
 
+            # 3. Save the transaction (Only ONCE)
+            transaction = serializer.save()
+
+            # 4. Smart Savings Logic (Tiered)
+            if transaction.transaction_type == 'payment' and account.round_up_enabled:
+                amount = transaction.amount
+                savings = Decimal('0.00')
+
+                # Smart Tiered Logic
+                if amount < 10:
+                    savings = amount.to_integral_value(rounding='ROUND_CEILING') - amount
+                elif 10 <= amount < 50:
+                    round_up = amount.to_integral_value(rounding='ROUND_CEILING') - amount
+                    savings = round_up + (amount * Decimal('0.01'))
+                elif 50 <= amount < 100:
+                    savings = amount * Decimal('0.02')
+                elif 100 <= amount < 200:
+                    savings = amount * Decimal('0.03')
+                elif 200 <= amount < 500:
+                    savings = amount * Decimal('0.04')
+                elif 500 <= amount < 1000:
+                    savings = amount * Decimal('0.05')
+                else: # Over 1000
+                    savings = Decimal('50.00')
+
+                if savings > 0:
+                    savings = savings.quantize(Decimal('0.01'))
+                    account.round_up_pot += savings
+                    account.starting_balance -= savings
+                    account.save()
+
+        except Account.DoesNotExist:
+            return Response({"error": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            raise e
+        
     @action(detail=False, methods=['get'], url_path='account/(?P<account_id>[^/.]+)')
     def account_transactions(self, request, account_id=None):
         # View all transactions related to a specific account

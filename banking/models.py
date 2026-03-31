@@ -6,6 +6,7 @@ class Account(models.Model):
     ACCOUNT_TYPES = [
         ('current', 'Current'),
         ('savings', 'Savings'),
+        ('savingsplus', 'Savings Plus'),
         ('credit', 'Credit'),
         ('other', 'Other'),
     ]
@@ -23,6 +24,22 @@ class Account(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Card(models.Model):
+    """
+    Represents a bank card linked to a specific Account.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='cards')
+    card_holder_name = models.CharField(max_length=255)
+    card_number = models.CharField(max_length=16, unique=True)
+    expiry_date = models.CharField(max_length=5) # Format: MM/YY
+    cvv = models.CharField(max_length=3)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Card ****{self.card_number[-4:]} for {self.account.name}"
 
 class Business(models.Model):
     id = models.CharField(primary_key=True, max_length=50)
