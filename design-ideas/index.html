@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Knight · Banking UI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="file_000000003cd8724683c3d68e7207f312.png" alt="Crypto Knight logo" class="brand-mark" />
+      <div class="brand-text">
+        <span class="eyebrow">Digital Banking</span>
+        <strong>Crypto Knight</strong>
+      </div>
+    </div>
+    <nav class="controls" role="group" aria-label="Screen navigation">
+      <button class="tab" data-target="login">Login</button>
+      <button class="tab" data-target="accounts">Accounts</button>
+      <button class="tab" data-target="dashboard">Dashboard</button>
+      <button class="tab" data-target="transactions">Transactions</button>
+      <button class="tab" data-target="balance">Balance</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="screen" data-screen="login" aria-label="Login">
+      <div class="split">
+        <div class="hero-card">
+          <div class="logo-badge">
+            <img src="file_000000003cd8724683c3d68e7207f312.png" alt="Crypto Knight logo" />
+          </div>
+          <p class="eyebrow">Secure access</p>
+          <h1>Welcome back!</h1>
+          <p class="lede">Log in to manage your UK accounts, track crypto positions, and move money without friction.</p>
+          <div class="bullet-row">
+            <span>Biometric-ready</span>
+            <span>24/7 fraud watch</span>
+            <span>Instant confirmations</span>
+          </div>
+        </div>
+        <form class="form-card" aria-label="Login form">
+          <p class="eyebrow">Login</p>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" placeholder="you@cryptoknight.app" required />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <div class="input-row">
+              <input type="password" placeholder="••••••••" required />
+              <button type="button" class="ghost">Show</button>
+            </div>
+          </label>
+          <div class="field inline">
+            <label><input type="checkbox" /> Keep me signed in</label>
+            <a class="link" href="#">Forgot?</a>
+          </div>
+          <button type="button" class="primary" data-target="dashboard">Access dashboard</button>
+          <button type="button" class="secondary" data-target="balance">View balances</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="accounts" aria-label="Accounts">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Accounts</p>
+          <h2>Your bank accounts</h2>
+        </div>
+        <div class="chip-row">
+          <span class="chip">Multi-currency</span>
+          <span class="chip">Instant transfers</span>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Current account</p>
+              <h3>£12,430.22</h3>
+              <p class="muted">GBP · Everyday spending</p>
+            </div>
+            <span class="pill">+1.1%</span>
+          </div>
+          <div class="cta-row">
+            <button class="primary" data-target="transactions">View activity</button>
+            <button class="secondary" data-target="balance">See balances</button>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Savings vault</p>
+              <h3>£26,580.00</h3>
+              <p class="muted">GBP · Savings</p>
+            </div>
+            <span class="pill">+3.4%</span>
+          </div>
+          <div class="cta-row">
+            <button class="primary" data-target="transactions">View activity</button>
+            <button class="secondary" data-target="dashboard">Dashboard</button>
+          </div>
+        </article>
+      </div>
+      <div class="card list-card accounts-links">
+        <div class="card-head">
+          <div>
+            <p class="eyebrow">Linked wallets</p>
+            <h3>Move between accounts</h3>
+            <p class="muted">Bridge funds across current, savings, and crypto wallets.</p>
+          </div>
+        </div>
+        <ul class="link-list dense">
+          <li>
+            <span>Current → Savings</span>
+            <div class="switch-row">
+              <label class="switch" aria-label="Enable automatic saver">
+                <input type="checkbox" />
+                <span class="slider"></span>
+              </label>
+              <span class="muted switch-label">Regular Saver (daily sweep)</span>
+              <button class="ghost" data-target="transactions">Transfer</button>
+            </div>
+          </li>
+          <li><span>Savings → Current</span><button class="ghost" data-target="transactions">Transfer</button></li>
+          <li><span>Crypto Wallet → Current</span><button class="ghost" data-target="transactions">Convert</button></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="dashboard" aria-label="Dashboard">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Overview</p>
+          <h2>Command the vault</h2>
+        </div>
+        <div class="chip-row">
+          <span class="chip">Today</span>
+          <span class="chip">This week</span>
+          <span class="chip">Custom</span>
+        </div>
+      </div>
+      <div class="grid stats">
+        <article class="card stat">
+          <div class="stat-top">
+            <div>
+              <p class="eyebrow">Total Balance</p>
+              <h3>£94,200.20</h3>
+            </div>
+            <span class="pill">+5.9%</span>
+          </div>
+          <p class="muted">Across fiat and crypto holdings</p>
+        </article>
+        <article class="card stat">
+          <div class="stat-top">
+            <div>
+              <p class="eyebrow">Last Transaction</p>
+              <h3>£2,054.03</h3>
+            </div>
+            <span class="pill neutral">Today</span>
+          </div>
+          <p class="muted">Sent to Treasury Wallet</p>
+        </article>
+        <article class="card stat">
+          <div class="stat-top">
+            <div>
+              <p class="eyebrow">Available Cash</p>
+              <h3>£10,740.55</h3>
+            </div>
+            <span class="pill">+0.3%</span>
+          </div>
+          <p class="muted">Ready for withdrawals</p>
+        </article>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Current account</p>
+              <h3>£12,430.22</h3>
+              <p class="muted">Current · GBP</p>
+            </div>
+          </div>
+          <p class="muted">Recent deposits and card spend trending steady.</p>
+          <div class="cta-row">
+            <button class="secondary" data-target="transactions">Activity</button>
+            <button class="ghost" data-target="accounts">Accounts</button>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Savings vault</p>
+              <h3>£26,580.00</h3>
+              <p class="muted">High-yield · GBP</p>
+            </div>
+          </div>
+          <p class="muted">Earning yield; transfers available instantly to current.</p>
+          <div class="cta-row">
+            <button class="secondary" data-target="transactions">Activity</button>
+            <button class="ghost" data-target="accounts">Accounts</button>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid two mid-gap">
+        <article class="card chart">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Performance</p>
+              <h3>Adaptive investing</h3>
+              <p class="muted">Dynamic allocation reacts to volatility.</p>
+            </div>
+          </div>
+          <div class="chart-bars">
+            <div class="bar" style="--value: 72%">BTC</div>
+            <div class="bar" style="--value: 58%">ETH</div>
+            <div class="bar" style="--value: 42%">SOL</div>
+            <div class="bar" style="--value: 36%">USDC</div>
+          </div>
+        </article>
+        <article class="card list-card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Quick links</p>
+              <h3>Move faster</h3>
+            </div>
+          </div>
+          <ul class="link-list">
+            <li><span>Send money</span><button class="ghost" data-target="transactions">Open</button></li>
+            <li><span>Add funds</span><button class="ghost" data-target="balance">Review</button></li>
+            <li><span>View statements</span><button class="ghost" data-target="transactions">Statements</button></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="transactions" aria-label="Transactions">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Activity</p>
+          <h2>Transaction stream</h2>
+        </div>
+        <div class="chip-row">
+          <span class="chip">All</span>
+          <span class="chip">Settled</span>
+          <span class="chip">Pending</span>
+        </div>
+      </div>
+      <div class="card table-card">
+        <div class="table-row head">
+          <span>Account</span>
+          <span>Direction</span>
+          <span>Ref</span>
+          <span>Amount</span>
+          <span>Status</span>
+          <span>Date</span>
+        </div>
+        <div class="table-row">
+          <span>Current</span>
+          <span>Outgoing</span>
+          <span>Card payment · Knightsbridge Bistro</span>
+          <span>£2,054.03</span>
+          <span class="status success">Completed</span>
+          <span>17 Mar 2026</span>
+        </div>
+        <div class="table-row">
+          <span>Savings</span>
+          <span>Incoming</span>
+          <span>Regular saver sweep · Daily</span>
+          <span>£1.20</span>
+          <span class="status warning">Pending</span>
+          <span>10 Mar 2026</span>
+        </div>
+        <div class="table-row">
+          <span>Current</span>
+          <span>Outgoing</span>
+          <span>Regular saver sweep · Daily</span>
+          <span>£1.20</span>
+          <span class="status success">Completed</span>
+          <span>10 Mar 2026</span>
+        </div>
+        <div class="table-row">
+          <span>Savings</span>
+          <span>Incoming</span>
+          <span>Standing order · ISA top-up</span>
+          <span>£240.28</span>
+          <span class="status neutral">Scheduled</span>
+          <span>09 Mar 2026</span>
+        </div>
+      </div>
+      <div class="cta-row">
+        <button class="secondary" data-target="accounts">Accounts</button>
+        <button class="primary" data-target="balance">See balances</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="balance" aria-label="Balance">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Holdings</p>
+          <h2>Balances at a glance</h2>
+        </div>
+      </div>
+      <div class="grid two">
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Available funds</p>
+              <h3>£18,760.10</h3>
+              <p class="muted">Across current and savings</p>
+            </div>
+            <span class="pill">+1.2%</span>
+          </div>
+          <div class="progress">
+            <span>Current account</span>
+            <div class="bar-line"><span style="width:40%"></span></div>
+            <span>Savings account</span>
+            <div class="bar-line"><span style="width:60%"></span></div>
+          </div>
+        </article>
+        <article class="card list-card">
+          <div class="card-head">
+            <div>
+              <p class="eyebrow">Wallets</p>
+              <h3>Multi-currency</h3>
+            </div>
+          </div>
+          <ul class="link-list dense">
+            <li><span>Current (GBP)</span><strong>£12,430.22</strong></li>
+            <li><span>Savings (GBP)</span><strong>£26,580.00</strong></li>
+            <li><span>BTC Wallet</span><strong>1.12 BTC</strong></li>
+            <li><span>ETH Wallet</span><strong>8.24 ETH</strong></li>
+          </ul>
+        </article>
+      </div>
+      <div class="cta-row">
+        <button class="secondary" data-target="transactions">Recent activity</button>
+        <button class="primary" data-target="dashboard">Back to dashboard</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Crypto Knight · Secure UK digital banking</span>
+    <button class="ghost" data-target="login">Return to login</button>
+  </footer>
+
+    <button class="chat-fab" data-chat-toggle aria-label="Open chat">
+      <img src="file_000000003cd8724683c3d68e7207f312.png" alt="Open chat" />
+    </button>
+
+    <section class="chat-popup" data-chat-popup aria-label="Chat popup">
+      <div class="chat-popup-header">
+        <div class="chat-title">
+          <img class="mini-logo" src="file_000000003cd8724683c3d68e7207f312.png" alt="Crypto Knight logo" />
+          <div>
+            <p class="eyebrow">Assistant</p>
+            <strong>Crypto Knight Chat</strong>
+          </div>
+        </div>
+        <button class="ghost icon" type="button" data-chat-toggle aria-label="Close chat">×</button>
+      </div>
+      <div class="chat-body">
+        <p class="muted">Ask about transfers, limits, or balances.</p>
+        <div class="chat-bubble bot">How can I help today?</div>
+      </div>
+      <form class="chat-input" aria-label="Chat message">
+        <input type="text" placeholder="Type a message..." />
+        <button type="submit" class="primary">Send</button>
+      </form>
+    </section>
+
+  <script src="script.js"></script>
+</body>
+</html>

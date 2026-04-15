@@ -21,7 +21,8 @@ class BankingAPITestCase(APITestCase):
             id="3ac94f73-ee6a-473a-ad35-c36164229144",
             name="Test User",
             starting_balance=Decimal('1000.00'),
-            round_up_enabled=True
+            round_up_enabled=True,
+            user=self.user
         )
 
         self.business = Business.objects.create(
@@ -108,7 +109,7 @@ class BankingAPIManagerTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(RefreshToken.for_user(self.user).access_token))
 
         # Create account and business with valid UUID for account id
-        self.account = Account.objects.create(id=uuid.uuid4(), name="User Account", starting_balance=Decimal('1000.00'), round_up_enabled=True)
+        self.account = Account.objects.create(id=uuid.uuid4(), name="User Account", starting_balance=Decimal('1000.00'), round_up_enabled=True, user=self.user)
         self.business = Business.objects.create(id="kfc", name="KFC", category="Food", sanctioned=False)
         self.transaction = Transaction.objects.create(transaction_type="payment", amount=Decimal('50.00'), from_account=self.account, to_account=self.account)
 
@@ -149,7 +150,7 @@ class BankingAPITestCase3(APITestCase):
         self.user = User.objects.create_user(username="testuser", password="password")
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(RefreshToken.for_user(self.user).access_token))
 
-        self.account = Account.objects.create(id=uuid.uuid4(), name="User Account", starting_balance=Decimal('1000.00'), round_up_enabled=True)
+        self.account = Account.objects.create(id=uuid.uuid4(), name="User Account", starting_balance=Decimal('1000.00'), round_up_enabled=True, user=self.user)
         self.business = Business.objects.create(id="kfc", name="KFC", category="Food", sanctioned=True)
         self.transaction = Transaction.objects.create(transaction_type="payment", amount=Decimal('50.00'), from_account=self.account, to_account=self.account)
     def test_enable_roundup(self):
