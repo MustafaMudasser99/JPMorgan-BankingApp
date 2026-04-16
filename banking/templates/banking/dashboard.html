@@ -1,0 +1,95 @@
+{% extends 'banking/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Extra Credit Union{% endblock %}
+
+{% block content %}
+    <div class="dashboard-grid">
+        <div class="card">
+            <h2>Account Overview</h2>
+            <div class="balance-overview">
+                <div class="balance-card">
+                    <div class="balance-amount" id="total-balance">£{{ total_balance }}</div>
+                    <div class="balance-label">Total Balance</div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-amount" id="total-savings" style="color: var(--success-color);">£{{ total_savings }}</div>
+                    <div class="balance-label">Total Savings</div>
+                </div>
+                <div class="balance-card">
+                    <div class="balance-amount" id="account-count">{{ accounts|length }}</div>
+                    <div class="balance-label">Total Accounts</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Recent Transactions</h2>
+            <div id="recent-transactions">
+                {% for transaction in recent_transactions %}
+                <div class="transaction-item">
+                    <div class="transaction-details">
+                        <h4>
+                            {% if transaction.business %}
+                                {{ transaction.business.name }}
+                            {% else %}
+                                {{ transaction.transaction_type|title }}
+                            {% endif %}
+                        </h4>
+                        <div class="transaction-meta">
+                            {{ transaction.timestamp|date:"M d, Y" }} • {{ transaction.transaction_type|title }}
+                        </div>
+                    </div>
+                    <div class="transaction-amount {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}transaction-deposit{% else %}transaction-payment{% endif %}">
+                        {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}
+                            +£{{ transaction.amount }}
+                        {% else %}
+                            -£{{ transaction.amount }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="loading">No recent transactions</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Your Accounts</h2>
+        <div class="accounts-list">
+            {% for account in accounts %}
+            <div class="account-item" data-account-id="{{ account.id }}">
+                <div class="account-info">
+                    <h3>{{ account.name }}</h3>
+                    <span class="account-type">{{ account.get_account_type_display }}</span>
+                    {% if account.round_up_enabled %}
+                    <span style="margin-left: 10px; font-size: 0.8em; color: var(--success-color);">✓ Round-up enabled</span>
+                    {% endif %}
+                </div>
+                <div class="account-balance">
+                    £{{ account.starting_balance }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{% static 'banking/css/dashboard.css' %}">
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.account-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const accountId = this.getAttribute('data-account-id');
+            });
+        });
+    });
+</script>
+{% endblock %}

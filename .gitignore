@@ -56,3 +56,9 @@ yarn.lock
 # Ignore temporary files
 *.tmp
 *.swp
+
+# Generated static files
+staticfiles/
+
+# Django
+db.sqlite3

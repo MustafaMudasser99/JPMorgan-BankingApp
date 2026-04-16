@@ -1,0 +1,108 @@
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+    margin-right: 20px;
+    margin-left: 20px;
+}
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.balance-overview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+@media (max-width: 768px) {
+    .balance-overview {
+        grid-template-columns: 1fr;
+    }
+}
+.balance-card {
+    text-align: center;
+    padding: 15px;
+    border-radius: 6px;
+    background: #5F7161;
+}
+.balance-amount {
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+.balance-label {
+    color: var(--secondary-color);
+    font-size: 0.9em;
+}
+.accounts-list {
+    display: grid;
+    gap: 10px;
+}
+.account-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: #5F7161;
+    transition: all 0.3s ease;
+}
+.account-item:hover {
+    background: #f8f9fa;
+    border-color: var(--primary-color);
+}
+.account-info h3 {
+    margin-bottom: 5px;
+}
+.account-type {
+    font-size: 0.8em;
+    color: var(--secondary-color);
+    text-transform: uppercase;
+}
+.account-balance {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.transaction-item:last-child {
+    border-bottom: none;
+}
+.transaction-details h4 {
+    margin-bottom: 5px;
+}
+.transaction-meta {
+    font-size: 0.85em;
+    color: var(--secondary-color);
+}
+.transaction-amount {
+    font-weight: bold;
+}
+.transaction-payment {
+    color: var(--danger-color);
+}
+.transaction-deposit {
+    color: var(--success-color);
+}
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--secondary-color);
+}
+.error {
+    color: var(--danger-color);
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+}

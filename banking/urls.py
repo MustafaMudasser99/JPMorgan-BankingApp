@@ -7,6 +7,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .views import AccountViewSet, TransactionViewSet, BusinessViewSet
+from .template_views import DashboardView
 from .test_view import TestView
 from .registration_view import UserRegistrationView
 from .template_views import BalanceView, export_transactions_csv
