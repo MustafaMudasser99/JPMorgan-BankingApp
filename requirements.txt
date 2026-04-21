@@ -4,3 +4,4 @@ djangorestframework-simplejwt
 drf-yasg
 django-rest-swagger
 django-cors-headers
+django-extensions
