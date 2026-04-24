@@ -5,31 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}CryptoKnights Banking{% endblock %}</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'banking/css/base.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'banking/css/house-style.css' %}">
     {% block styles %}
     {% endblock %}
 </head>
 
 <body>
-    <header>
-        <nav>
-            <div class="logo">CryptoKnights</div>
-            <ul class="nav-links">
-                <li><a href="#">Home</a></li>
-                <li><a href="/banking/dashboard/">Dashboard</a></li>
-                <li><a href="#">Accounts</a></li>
-                <li><a href="#">Transactions</a></li>
-            </ul>
-            <div class="auth-links">
-                {% if request.user.is_authenticated %}
-                    <div class="user-info">
-                        <span class="welcome-text">Welcome, {{ request.user.username }}</span>
-                        <a href="/banking/logout/" class="btn btn-secondary">Logout</a>
-                    </div>
-                {% else %}
-                    <a href="/banking/login/" class="btn btn-secondary">Login</a>
-                {% endif %}
+    <header class="topbar">
+        <div class="brand">
+            <img src="{% static 'banking/images/logo.png' %}" alt="Crypto Knight logo" class="brand-mark" />
+            <div class="brand-text">
+                <span class="eyebrow">Digital Banking</span>
+                <strong>Crypto Knight</strong>
             </div>
+        </div>
+        <nav class="controls" aria-label="Primary navigation">
+            <a class="tab {% if request.path == '/banking/login/' %}active{% endif %}" href="/banking/login/">Login</a>
+            <a class="tab {% if request.path == '/banking/dashboard/' %}active{% endif %}" href="/banking/dashboard/#accounts">Accounts</a>
+            <a class="tab {% if request.path == '/banking/dashboard/' %}active{% endif %}" href="/banking/dashboard/">Dashboard</a>
+            <a class="tab {% if request.path == '/banking/balance/' %}active{% endif %}" href="/banking/balance/#transactions">Transactions</a>
+            <a class="tab {% if request.path == '/banking/balance/' %}active{% endif %}" href="/banking/balance/">Balance</a>
         </nav>
     </header>
 
@@ -46,8 +44,9 @@
         {% endblock %}
     </main>
 
-    <footer>
-        <p>&copy; 2026 CryptoKnights Banking. All rights reserved.</p>
+    <footer class="footer">
+        <span>Crypto Knight · Secure UK digital banking</span>
+        <a class="ghost" href="/banking/dashboard/">Back to dashboard</a>
     </footer>
 
     {% block scripts %}

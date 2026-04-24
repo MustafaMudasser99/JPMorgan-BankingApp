@@ -5,21 +5,47 @@
 
 {% block content %}
     <div class="dashboard-grid">
-        <div class="card">
-            <h2>Account Overview</h2>
-            <div class="balance-overview">
-                <div class="balance-card">
-                    <div class="balance-amount" id="total-balance">£{{ total_balance }}</div>
-                    <div class="balance-label">Total Balance</div>
+        <div>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">Overview</p>
+                    <h2>Account Overview</h2>
                 </div>
-                <div class="balance-card">
-                    <div class="balance-amount" id="total-savings" style="color: var(--success-color);">£{{ total_savings }}</div>
-                    <div class="balance-label">Total Savings</div>
-                </div>
-                <div class="balance-card">
-                    <div class="balance-amount" id="account-count">{{ accounts|length }}</div>
-                    <div class="balance-label">Total Accounts</div>
-                </div>
+            </div>
+
+            <div class="grid stats">
+                <article class="card stat">
+                    <div class="stat-top">
+                        <div>
+                            <p class="eyebrow">Total Balance</p>
+                            <h3 id="total-balance">£{{ total_balance }}</h3>
+                        </div>
+                        <span class="pill" aria-hidden="true"></span>
+                    </div>
+                    <p class="muted">&nbsp;</p>
+                </article>
+
+                <article class="card stat">
+                    <div class="stat-top">
+                        <div>
+                            <p class="eyebrow">Total Savings</p>
+                            <h3 id="total-savings">£{{ total_savings }}</h3>
+                        </div>
+                        <span class="pill neutral" aria-hidden="true"></span>
+                    </div>
+                    <p class="muted">&nbsp;</p>
+                </article>
+
+                <article class="card stat">
+                    <div class="stat-top">
+                        <div>
+                            <p class="eyebrow">Total Accounts</p>
+                            <h3 id="account-count">{{ accounts|length }}</h3>
+                        </div>
+                        <span class="pill" aria-hidden="true"></span>
+                    </div>
+                    <p class="muted">&nbsp;</p>
+                </article>
             </div>
         </div>
 
@@ -55,24 +81,28 @@
         </div>
     </div>
 
-    <div class="card">
-        <h2>Your Accounts</h2>
-        <div class="accounts-list">
-            {% for account in accounts %}
-            <div class="account-item" data-account-id="{{ account.id }}">
-                <div class="account-info">
-                    <h3>{{ account.name }}</h3>
-                    <span class="account-type">{{ account.get_account_type_display }}</span>
-                    {% if account.round_up_enabled %}
-                    <span style="margin-left: 10px; font-size: 0.8em; color: var(--success-color);">✓ Round-up enabled</span>
-                    {% endif %}
-                </div>
-                <div class="account-balance">
-                    £{{ account.starting_balance }}
-                </div>
-            </div>
-            {% endfor %}
+    <div class="section-heading" id="accounts" style="margin-top: 16px;">
+        <div>
+            <h2>Your Accounts</h2>
         </div>
+    </div>
+    <div class="grid two">
+        {% for account in accounts %}
+            <article class="card">
+                <div class="card-head">
+                    <div>
+                        <p class="eyebrow">{{ account.get_account_type_display }} account</p>
+                        <h3>£{{ account.get_balance }}</h3>
+                        <p class="muted">{{ account.name }}</p>
+                    </div>
+                    <span class="pill">{% if account.round_up_enabled %}Round-up{% else %}Standard{% endif %}</span>
+                </div>
+                <div class="cta-row">
+                    <a class="primary" href="/banking/balance/#transactions">View activity</a>
+                    <a class="secondary" href="/banking/balance/">See balances</a>
+                </div>
+            </article>
+        {% endfor %}
     </div>
 {% endblock %}
 
@@ -85,11 +115,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.account-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const accountId = this.getAttribute('data-account-id');
-            });
-        });
     });
 </script>
 {% endblock %}

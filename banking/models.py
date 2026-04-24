@@ -24,6 +24,14 @@ class Account(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_balance(self):
+        """
+        Calculate the current balance from starting balance + transactions.
+        """
+        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
+        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
+        return self.starting_balance + incoming + outgoing
     
 class Card(models.Model):
     """

@@ -108,6 +108,8 @@ class TemplateRegistrationView(View):
 class DashboardView(View):
     @method_decorator(login_required(login_url='login'))
     def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect('login')
         accounts = Account.objects.filter(user=request.user)
         total_balance = sum(account.starting_balance for account in accounts)
         recent_transactions = Transaction.objects.filter(

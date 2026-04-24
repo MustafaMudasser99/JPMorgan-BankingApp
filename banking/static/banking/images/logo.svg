@@ -1,0 +1,16 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Crypto Knight logo">
+  <defs>
+    <linearGradient id="g" x1="48" y1="40" x2="208" y2="216" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#4ADE80"/>
+    </linearGradient>
+    <linearGradient id="s" x1="64" y1="64" x2="192" y2="192" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C1323"/>
+      <stop offset="1" stop-color="#10192F"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="28" width="200" height="200" rx="44" fill="url(#s)" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+  <path d="M73 150c0-43 30-79 69-79 18 0 34 7 46 19" stroke="url(#g)" stroke-width="14" stroke-linecap="round"/>
+  <path d="M177 106l-7 36 36-7" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M90 171h76" stroke="rgba(231,236,245,0.7)" stroke-width="10" stroke-linecap="round"/>
+</svg>
