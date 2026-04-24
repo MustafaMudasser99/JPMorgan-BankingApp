@@ -1,24 +1,22 @@
-@import url('https://fonts.googleapis.com/css?family=Montserrat:400,800');
-
 * {
     box-sizing: border-box;
 }
 
 body {
-    background: #f0f2f5;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Manrope', 'Segoe UI', sans-serif;
     height: 100vh;
     margin: 0;
 }
 
 h1 {
+    font-family: inherit;
     font-weight: bold;
     margin: 0 0 10px;
-    color: #6D98CD;
+    color: var(--color-text);
 }
 
 p {
@@ -30,13 +28,15 @@ p {
 }
 
 span {
+    font-family: inherit;
     font-size: 12px;
-    color: #666;
+    color: var(--color-muted);
     margin-bottom: 10px;
 }
 
 a {
-    color: #1a237e;
+    font-family: inherit;
+    color: var(--color-secondary);
     font-size: 14px;
     text-decoration: none;
     margin: 15px 0;
@@ -44,14 +44,15 @@ a {
 }
 
 a:hover {
-    color: #c5a059; /* رنگ طلایی هنگام هاور */
+    color: var(--color-primary);
 }
 
 button {
+    font-family: inherit;
     border-radius: 8px;
-    border: 1px solid #1a237e;
-    background-color: #1a237e;
-    color: #ffffff;
+    border: 1px solid transparent;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: var(--color-text);
     font-size: 12px;
     font-weight: bold;
     padding: 12px 45px;
@@ -60,6 +61,16 @@ button {
     transition: all 0.3s ease-in;
     cursor: pointer;
     margin-top: 10px;
+}
+
+.sign-in-container h1,
+.sign-in-container a,
+.sign-in-container button {
+    color: var(--color-text);
+}
+
+.sign-in-container span {
+    color: var(--color-muted);
 }
 
 button:active {
@@ -77,7 +88,9 @@ button.ghost:hover {
 }
 
 form {
-    background-color: #FFFFFF;
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -87,9 +100,19 @@ form {
     text-align: center;
 }
 
+form p {
+    color: var(--color-muted);
+}
+
+form span {
+    color: var(--color-muted);
+}
+
 input {
-    background-color: #f4f7f9;
-    border: 1px solid #e1e8ed;
+    font-family: inherit;
+    background-color: #0c1323;
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
     padding: 12px 15px;
     margin: 8px 0;
     width: 100%;
@@ -99,19 +122,44 @@ input {
 
 input:focus {
     outline: none;
-    border-color: #c5a059; /* طلایی شدن حاشیه هنگام فوکوس */
-    box-shadow: 0 0 5px rgba(197, 160, 89, 0.2);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
 }
 
 .container {
-    background-color: #fff;
+    background-color: var(--color-panel);
     border-radius: 20px;
-    box-shadow: 0 14px 28px rgba(0,0,0,0.1), 0 10px 10px rgba(0,0,0,0.08);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
     width: 850px;
     max-width: 100%;
     min-height: 520px;
+}
+
+.sign-in-container form,
+.sign-up-container form {
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.06) 0%,
+        rgba(255, 255, 255, 0.03) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+}
+
+input::placeholder {
+    color: rgba(159, 178, 208, 0.8);
+}
+
+input {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+button.ghost {
+    border-color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.92);
 }
 
 .form-container {
@@ -172,8 +220,7 @@ input:focus {
 }
 
 .overlay {
-    background: #1a237e;
-    background: linear-gradient(135deg, #0d1442 0%, #1a237e 100%);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(74, 222, 128, 0.22) 100%);
     color: #ffffff;
     position: relative;
     left: -100%;
@@ -224,7 +271,7 @@ input:focus {
 }
 
 .social-container a {
-    border: 1px solid #e1e8ed;
+    border: 1px solid var(--color-border);
     border-radius: 50%;
     display: inline-flex;
     justify-content: center;
@@ -232,12 +279,12 @@ input:focus {
     margin: 0 5px;
     height: 40px;
     width: 40px;
-    background: #fff;
-    color: #1a237e;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--color-secondary);
 }
 
 .social-container a:hover {
-    background-color: #1a237e;
-    color: #fff;
-    border-color: #1a237e;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-text);
+    border-color: rgba(255, 255, 255, 0.18);
 }

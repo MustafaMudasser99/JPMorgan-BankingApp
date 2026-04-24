@@ -145,3 +145,6 @@ REST_FRAMEWORK = {
 
 CORS_ALLOW_ALL_ORIGINS = True  # For development only, don't use in production
 CORS_ALLOW_CREDENTIALS = True
+
+# Web auth redirects (Django's default is /accounts/login/)
+LOGIN_URL = "/banking/login/"
