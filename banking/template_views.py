@@ -12,6 +12,26 @@ from django.utils.decorators import method_decorator
 from .models import Account, Transaction
 from decimal import Decimal
 
+@login_required(login_url='login')
+def apply_savers_plus(request):
+    if request.method != 'POST':
+        return redirect('dashboard')
+
+    if Account.objects.filter(user=request.user, account_type='saversplus').exists():
+        messages.error(request, 'You already have a Savers Plus account.')
+        return redirect('dashboard')
+
+    Account.objects.create(
+        name=f"{request.user.first_name or request.user.username}'s Savers Plus Account",
+        starting_balance=Decimal('0.00'),
+        round_up_enabled=True,
+        user=request.user,
+        account_type='saversplus',
+    )
+
+    messages.success(request, 'Savers Plus account created.')
+    return redirect('dashboard')
+
 class TemplateRegistrationView(View):
     """
     A template-based registration view that handles both GET and POST requests.
@@ -230,6 +250,17 @@ class BalanceView(View):
             
             # Get user accounts
             accounts = Account.objects.filter(user=request.user)
+
+            account_type_filters = []
+            seen_account_types = set()
+            for account in accounts:
+                if account.account_type in seen_account_types:
+                    continue
+                seen_account_types.add(account.account_type)
+                account_type_filters.append({
+                    'key': account.account_type,
+                    'label': account.get_account_type_display(),
+                })
             
             # Get recent transactions
             transactions = []
@@ -271,20 +302,25 @@ class BalanceView(View):
             total_balance = sum(account.get_balance() for account in accounts)
             
             # Calculate percentages for progress bars
-            account_balances = {}
+            balance_rows = []
             for account in accounts:
                 balance = account.get_balance()
-                account_balances[account.name] = {
+                percentage = int((balance / total_balance * 100) if total_balance > 0 else 0)
+                balance_rows.append({
+                    'name': account.name,
                     'balance': balance,
-                    'percentage': int((balance / total_balance * 100) if total_balance > 0 else 0)
-                }
+                    'percentage': percentage,
+                    'account_type': account.account_type,
+                    'account_type_display': account.get_account_type_display(),
+                })
             
             context = {
                 'accounts': accounts,
                 'transactions': transactions,
                 'total_balance': total_balance,
-                'account_balances': account_balances,
-                'logo_url': static('banking/images/logo.png')
+                'balance_rows': balance_rows,
+                'logo_url': static('banking/images/logo.png'),
+                'account_type_filters': account_type_filters,
             }
             
             return render(request, self.template_name, context)

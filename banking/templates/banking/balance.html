@@ -1,10 +1,11 @@
 {% extends 'banking/base.html' %}
 {% load static %}
+{% load account_tags %}
 
 {% block title %}Crypto Knight · Account Balance{% endblock %}
 
 {% block content %}
-    <section class="screen" aria-label="Balance">
+    <section class="screen" id="balance-screen" aria-label="Balance">
       <div class="section-heading">
         <div>
           <p class="eyebrow">Holdings</p>
@@ -12,13 +13,14 @@
         </div>
         <div class="chip-row">
           <span class="chip active" data-filter="all">All</span>
-          <span class="chip" data-filter="current">Current</span>
-          <span class="chip" data-filter="savings">Savings</span>
+          {% for t in account_type_filters %}
+          <span class="chip" data-filter="{{ t.key }}">{{ t.label }}</span>
+          {% endfor %}
         </div>
       </div>
       
       <div class="grid two">
-        <article class="card">
+        <article class="card" id="available-funds-card">
           <div class="card-head">
             <div>
               <p class="eyebrow">Available funds</p>
@@ -30,14 +32,16 @@
             {% endif %}
           </div>
           <div class="progress">
-            {% for account_name, data in account_balances.items %}
-            <span>{{ account_name }}</span>
-            <div class="bar-line"><span class="progress-fill" data-width="{{ data.percentage }}"></span></div>
+            {% for row in balance_rows %}
+            <span data-account-type="{{ row.account_type }}">{{ row.name }}</span>
+            <div class="bar-line account-{{ row.account_type_display|account_type_slug }}" data-account-type="{{ row.account_type }}">
+              <span class="progress-fill" data-width="{{ row.percentage }}"></span>
+            </div>
             {% endfor %}
           </div>
         </article>
         
-        <article class="card list-card">
+        <article class="card list-card" id="balances-card">
           <div class="card-head">
             <div>
               <p class="eyebrow">Accounts</p>
@@ -46,7 +50,12 @@
           </div>
           <ul class="link-list dense">
             {% for account in accounts %}
-            <li><span>{{ account.name }}</span><strong>£{{ account.get_balance }}</strong></li>
+            <li
+              class="account-row account-{{ account.get_account_type_display|account_type_slug }}"
+              data-account-type="{{ account.account_type }}"
+            >
+              <span>{{ account.name }}</span><strong>£{{ account.get_balance }}</strong>
+            </li>
             {% endfor %}
           </ul>
         </article>
@@ -231,13 +240,19 @@
           
           const filterType = this.dataset.filter;
           const accountItems = document.querySelectorAll('.link-list li');
+
+          const screen = document.getElementById('balance-screen');
+          const balancesCard = document.getElementById('balances-card');
+          const availableFundsCard = document.getElementById('available-funds-card');
+          const isSaversPlusSelected = filterType === 'saversplus';
+          if (screen) screen.classList.toggle('filter-saversplus', isSaversPlusSelected);
+          if (balancesCard) balancesCard.classList.toggle('card-savers-plus', isSaversPlusSelected);
+          if (availableFundsCard) availableFundsCard.classList.toggle('card-savers-plus', isSaversPlusSelected);
           
           accountItems.forEach(item => {
-            const accountName = item.querySelector('span').textContent.toLowerCase();
-            
             if (filterType === 'all') {
               item.style.display = '';
-            } else if (accountName.includes(filterType)) {
+            } else if ((item.dataset.accountType || '') === filterType) {
               item.style.display = '';
             } else {
               item.style.display = 'none';

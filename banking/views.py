@@ -107,7 +107,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         # For list and retrieve actions, require authentication
-        if self.action in ['list', 'retrieve', 'my_accounts', 'roundups', 'spending_trends', 'current_balance', 'user_account']:
+        if self.action in ['list', 'retrieve', 'my_accounts', 'roundups', 'spending_trends', 'current_balance', 'user_account', 'apply_savers_plus']:
             return [IsAuthenticated()]
         # For create, update, delete actions, require admin privileges
         elif self.action in ['create', 'update', 'partial_update', 'destroy', 'manager_list']:
@@ -116,6 +116,31 @@ class AccountViewSet(viewsets.ModelViewSet):
         elif self.action in ['enable_roundup', 'reclaim_roundup']:
             return [IsAuthenticated()]
         return [AllowAny()]
+
+    @action(detail=False, methods=['post'], url_path='apply-savers-plus', permission_classes=[IsAuthenticated])
+    def apply_savers_plus(self, request):
+        """
+        Fast-path endpoint for end users to create a Savers Plus account.
+        This intentionally ignores any user/account_type coming from the client.
+        """
+        user = request.user
+
+        if Account.objects.filter(user=user, account_type='saversplus').exists():
+            return Response(
+                {"detail": "You already have a Savers Plus account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        created = Account.objects.create(
+            name=f"{user.first_name or user.username}'s Savers Plus Account",
+            starting_balance=Decimal('0.00'),
+            round_up_enabled=True,
+            user=user,
+            account_type='saversplus',
+        )
+
+        serializer = self.get_serializer(created)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
         
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_accounts(self, request):
