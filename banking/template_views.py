@@ -78,23 +78,9 @@ class TemplateRegistrationView(View):
                 last_name=last_name
             )
             
-            # Create default Current Account
-            current_account = Account.objects.create(
-                name=f"{first_name or username}'s Current Account",
-                starting_balance=Decimal('1000.00'),
-                round_up_enabled=False,
-                user=user,
-                account_type='current'
-            )
-            
-            # Create default Savings Account
-            savings_account = Account.objects.create(
-                name=f"{first_name or username}'s Savings Account",
-                starting_balance=Decimal('0.00'),
-                round_up_enabled=True,
-                user=user,
-                account_type='savings'
-            )
+            # Default accounts are created by the post_save(User) signal to avoid
+            # double-creating them across multiple registration flows.
+            accounts = Account.objects.filter(user=user)
             
             # Success message
             messages.success(request, 'Registration successful! Two accounts created.')
@@ -106,17 +92,12 @@ class TemplateRegistrationView(View):
                     'message': 'Registration successful',
                     'accounts': [
                         {
-                            'id': str(current_account.id),
-                            'name': current_account.name,
-                            'type': current_account.get_account_type_display(),
-                            'balance': str(current_account.starting_balance)
-                        },
-                        {
-                            'id': str(savings_account.id),
-                            'name': savings_account.name,
-                            'type': savings_account.get_account_type_display(),
-                            'balance': str(savings_account.starting_balance)
+                            'id': str(account.id),
+                            'name': account.name,
+                            'type': account.get_account_type_display(),
+                            'balance': str(account.starting_balance)
                         }
+                        for account in accounts
                     ]
                 })
             return redirect('login')  # Redirect to login page
@@ -193,24 +174,7 @@ def register_api(request):
                 first_name=first_name,
                 last_name=last_name
             )
-            
-            # Create default Current Account
-            current_account = Account.objects.create(
-                name=f"{first_name or username}'s Current Account",
-                starting_balance=Decimal('1000.00'),
-                round_up_enabled=False,
-                user=user,
-                account_type='current'
-            )
-            
-            # Create default Savings Account
-            savings_account = Account.objects.create(
-                name=f"{first_name or username}'s Savings Account",
-                starting_balance=Decimal('0.00'),
-                round_up_enabled=True,
-                user=user,
-                account_type='savings'
-            )
+            accounts = Account.objects.filter(user=user)
             
             # Return success response
             return JsonResponse({
@@ -218,17 +182,12 @@ def register_api(request):
                 'user_id': user.id,
                 'accounts': [
                     {
-                        'id': str(current_account.id),
-                        'name': current_account.name,
-                        'type': current_account.get_account_type_display(),
-                        'balance': str(current_account.starting_balance)
-                    },
-                    {
-                        'id': str(savings_account.id),
-                        'name': savings_account.name,
-                        'type': savings_account.get_account_type_display(),
-                        'balance': str(savings_account.starting_balance)
+                        'id': str(account.id),
+                        'name': account.name,
+                        'type': account.get_account_type_display(),
+                        'balance': str(account.starting_balance)
                     }
+                    for account in accounts
                 ]
             }, status=201)
             
@@ -539,22 +498,7 @@ class UserManagementView(View):
             if is_staff:
                 user.is_staff = True
                 user.save(update_fields=['is_staff'])
-
-            # Create default accounts (matching registration behavior)
-            Account.objects.create(
-                name=f"{first_name or username}'s Current Account",
-                starting_balance=Decimal('1000.00'),
-                round_up_enabled=False,
-                user=user,
-                account_type='current',
-            )
-            Account.objects.create(
-                name=f"{first_name or username}'s Savings Account",
-                starting_balance=Decimal('0.00'),
-                round_up_enabled=True,
-                user=user,
-                account_type='savings',
-            )
+            # Default accounts are created by the post_save(User) signal.
 
             messages.success(request, f'User "{username}" created.')
         except Exception as e:
