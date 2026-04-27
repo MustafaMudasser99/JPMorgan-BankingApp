@@ -137,10 +137,11 @@ class BankingAPIManagerTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_current_balance(self):
-        url = reverse('account-current-balance', args=[self.account.id])
+        url = reverse('account-current-balance')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('current_balance', response.data)        
+        self.assertIn('cash_balance', response.data)
+        self.assertIn('savings_pot', response.data)
 
 
 #TASK5 "Round Up," "Round Up Reclamation," "Top 10 Spenders,"

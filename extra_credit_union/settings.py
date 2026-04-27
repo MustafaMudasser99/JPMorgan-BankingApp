@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions',
     'rest_framework',
     'banking',
     #TASK1 Add swagger
@@ -47,6 +46,13 @@ INSTALLED_APPS = [
     #ENDTASK1
 
 ]
+
+# Optional dev-only apps (don't fail boot if missing)
+try:
+    import django_extensions  # noqa: F401
+    INSTALLED_APPS += ['django_extensions']
+except Exception:
+    pass
 
 MIDDLEWARE = [
     
