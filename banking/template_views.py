@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from .models import Account, Transaction
 from decimal import Decimal
 
@@ -131,6 +132,7 @@ class DashboardView(View):
         if not request.user.is_authenticated:
             return redirect('login')
         accounts = Account.objects.filter(user=request.user)
+        has_savers_plus = accounts.filter(account_type='saversplus').exists()
         total_balance = sum(account.starting_balance for account in accounts)
         recent_transactions = Transaction.objects.filter(
             from_account__in=accounts
@@ -139,6 +141,7 @@ class DashboardView(View):
 
         context = {
             'accounts': accounts,
+            'has_savers_plus': has_savers_plus,
             'total_balance': total_balance,
             'recent_transactions': recent_transactions,
             'total_savings': total_savings,
@@ -485,3 +488,102 @@ def export_transactions_csv(request):
                 ])
         
         return response
+
+
+@method_decorator(login_required(login_url='login'), name='dispatch')
+class UserManagementView(View):
+    """
+    Staff-only page for listing, creating, and deleting users.
+    """
+    template_name = 'banking/users.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'You do not have permission to manage users.')
+            return redirect('dashboard')
+
+        users = User.objects.all().order_by('username')
+        return render(request, self.template_name, {'users': users})
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create a new user (and default accounts) from a simple form.
+        """
+        if not request.user.is_staff:
+            messages.error(request, 'You do not have permission to manage users.')
+            return redirect('dashboard')
+
+        username = (request.POST.get('username') or '').strip()
+        password = request.POST.get('password') or ''
+        email = (request.POST.get('email') or '').strip()
+        first_name = (request.POST.get('first_name') or '').strip()
+        last_name = (request.POST.get('last_name') or '').strip()
+        is_staff = request.POST.get('is_staff') == 'on'
+
+        if not username or not password:
+            messages.error(request, 'Username and password are required.')
+            return redirect('user-management')
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return redirect('user-management')
+
+        try:
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            if is_staff:
+                user.is_staff = True
+                user.save(update_fields=['is_staff'])
+
+            # Create default accounts (matching registration behavior)
+            Account.objects.create(
+                name=f"{first_name or username}'s Current Account",
+                starting_balance=Decimal('1000.00'),
+                round_up_enabled=False,
+                user=user,
+                account_type='current',
+            )
+            Account.objects.create(
+                name=f"{first_name or username}'s Savings Account",
+                starting_balance=Decimal('0.00'),
+                round_up_enabled=True,
+                user=user,
+                account_type='savings',
+            )
+
+            messages.success(request, f'User "{username}" created.')
+        except Exception as e:
+            messages.error(request, f'Error creating user: {str(e)}')
+
+        return redirect('user-management')
+
+
+@require_POST
+@login_required(login_url='login')
+def delete_user(request, user_id: int):
+    """
+    Staff-only user delete (POST-only). Cascades to accounts via FK.
+    """
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to manage users.')
+        return redirect('dashboard')
+
+    if request.user.id == user_id:
+        messages.error(request, "You can't delete your own user while logged in.")
+        return redirect('user-management')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('user-management')
+
+    username = user.username
+    user.delete()
+    messages.success(request, f'User "{username}" deleted.')
+    return redirect('user-management')

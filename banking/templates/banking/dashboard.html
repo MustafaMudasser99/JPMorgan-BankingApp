@@ -5,6 +5,16 @@
 {% block title %}Dashboard - Extra Credit Union{% endblock %}
 
 {% block content %}
+    {% if has_savers_plus %}
+        <section class="ad-slot ad-slot-banner" aria-label="Advertisement">
+            <div class="ad-slot-inner">
+                <div class="ad-slot-label">Advertisement placeholder</div>
+                <div class="ad-slot-title">Your banner ad goes here</div>
+                <div class="ad-slot-meta">Size: 728×90 (example) · Savers Plus</div>
+            </div>
+        </section>
+    {% endif %}
+
     <div class="dashboard-grid">
         <div>
             <div class="section-heading">
@@ -50,34 +60,36 @@
             </div>
         </div>
 
-        <div class="card">
-            <h2>Recent Transactions</h2>
-            <div id="recent-transactions">
-                {% for transaction in recent_transactions %}
-                <div class="transaction-item">
-                    <div class="transaction-details">
-                        <h4>
-                            {% if transaction.business %}
-                                {{ transaction.business.name }}
+        <div>
+            <div class="card">
+                <h2>Recent Transactions</h2>
+                <div id="recent-transactions">
+                    {% for transaction in recent_transactions %}
+                    <div class="transaction-item">
+                        <div class="transaction-details">
+                            <h4>
+                                {% if transaction.business %}
+                                    {{ transaction.business.name }}
+                                {% else %}
+                                    {{ transaction.transaction_type|title }}
+                                {% endif %}
+                            </h4>
+                            <div class="transaction-meta">
+                                {{ transaction.timestamp|date:"M d, Y" }} • {{ transaction.transaction_type|title }}
+                            </div>
+                        </div>
+                        <div class="transaction-amount {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}transaction-deposit{% else %}transaction-payment{% endif %}">
+                            {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}
+                                +£{{ transaction.amount }}
                             {% else %}
-                                {{ transaction.transaction_type|title }}
+                                -£{{ transaction.amount }}
                             {% endif %}
-                        </h4>
-                        <div class="transaction-meta">
-                            {{ transaction.timestamp|date:"M d, Y" }} • {{ transaction.transaction_type|title }}
                         </div>
                     </div>
-                    <div class="transaction-amount {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}transaction-deposit{% else %}transaction-payment{% endif %}">
-                        {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}
-                            +£{{ transaction.amount }}
-                        {% else %}
-                            -£{{ transaction.amount }}
-                        {% endif %}
-                    </div>
+                    {% empty %}
+                    <div class="loading">No recent transactions</div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="loading">No recent transactions</div>
-                {% endfor %}
             </div>
         </div>
     </div>
