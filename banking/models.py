@@ -3,6 +3,31 @@ from django.db import models
 from django.contrib.auth.models import User
 from decimal import Decimal
 
+class UserProfile(models.Model):
+    """
+    Stores persistent per-user preferences for the web experience.
+    """
+    DASHBOARD_WIDGET_CHOICES = [
+        ('overview', 'Account overview'),
+        ('transactions', 'Transactions'),
+        ('accounts', 'Accounts'),
+        ('quick_transfer', 'Quick Transfer menu'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+
+    oobe_completed = models.BooleanField(default=False)
+    selected_account_types = models.JSONField(default=list, blank=True)  # e.g. ["current","savings","saversplus"]
+    dashboard_widgets = models.JSONField(default=list, blank=True)       # e.g. ["overview","transactions","accounts"]
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"UserProfile({self.user.username})"
+
+
 class Account(models.Model):
     ACCOUNT_TYPES = [
         ('current', 'Current'),
@@ -25,7 +50,8 @@ class Account(models.Model):
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default='current')
 
     SAVINGS_INTEREST_RATE = Decimal('0.020')
-    SAVERS_PLUS_INTEREST_RATE = Decimal('0.022')
+    # Savers Plus is 1 percentage point higher than Savings.
+    SAVERS_PLUS_INTEREST_RATE = Decimal('0.030')
 
     def __str__(self):
         return self.name

@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Account
 from .serializers import AccountSerializer
+from .models import UserProfile
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -31,6 +32,8 @@ class LoginView(APIView):
         # Get user's accounts
         accounts = Account.objects.filter(user=user)
         account_data = AccountSerializer(accounts, many=True).data
+
+        profile, _ = UserProfile.objects.get_or_create(user=user)
         
         return Response({
             'user': {
@@ -40,6 +43,9 @@ class LoginView(APIView):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'is_staff': user.is_staff,
+                'oobe_completed': profile.oobe_completed,
+                'selected_account_types': profile.selected_account_types,
+                'dashboard_widgets': profile.dashboard_widgets,
             },
             'accounts': account_data,
             'access': str(refresh.access_token),
@@ -55,6 +61,7 @@ class UserAccountsView(APIView):
         """
         user = request.user
         accounts = Account.objects.filter(user=user)
+        profile, _ = UserProfile.objects.get_or_create(user=user)
         
         return Response({
             'user': {
@@ -64,6 +71,9 @@ class UserAccountsView(APIView):
                 'first_name': user.first_name,
                 'last_name': user.last_name,
                 'is_staff': user.is_staff,
+                'oobe_completed': profile.oobe_completed,
+                'selected_account_types': profile.selected_account_types,
+                'dashboard_widgets': profile.dashboard_widgets,
             },
             'accounts': AccountSerializer(accounts, many=True).data
         })

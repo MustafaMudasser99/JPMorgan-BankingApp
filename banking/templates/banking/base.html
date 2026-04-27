@@ -24,6 +24,12 @@
         </div>
         <nav class="controls" aria-label="Primary navigation">
             {% if request.user.is_authenticated %}
+                <a class="tab" href="/banking/dashboard/?settings=1" aria-label="Settings">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M19.4 15a8.2 8.2 0 0 0 .1-1 8.2 8.2 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a8.4 8.4 0 0 0-1.7-1l-.4-2.6H9.1l-.4 2.6a8.4 8.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a8.2 8.2 0 0 0-.1 1 8.2 8.2 0 0 0 .1 1l-2 1.6 2 3.4 2.4-1a8.4 8.4 0 0 0 1.7 1l.4 2.6h5.8l.4-2.6a8.4 8.4 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                </a>
                 <a class="tab" href="/banking/logout/" onclick="try { logout(); } catch (e) {}">Logout</a>
             {% else %}
                 <a class="tab {% if request.path == '/banking/login/' %}active{% endif %}" href="/banking/login/">Login</a>

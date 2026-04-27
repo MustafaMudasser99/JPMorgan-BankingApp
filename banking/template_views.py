@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
-from .models import Account, Transaction
+from .models import Account, Transaction, UserProfile
 from decimal import Decimal
 
 @login_required(login_url='login')
@@ -31,6 +31,78 @@ def apply_savers_plus(request):
     )
 
     messages.success(request, 'Savers Plus account created.')
+    return redirect('dashboard')
+
+@require_POST
+@login_required(login_url='login')
+def oobe_settings(request):
+    """
+    Persist the out-of-box experience selections and mark onboarding complete.
+    """
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    action = (request.POST.get('action') or 'save').strip().lower()
+    settings_only = request.POST.get('settings_only') == '1'
+    if action == 'skip':
+        profile.oobe_completed = True
+        profile.selected_account_types = ['current']
+        profile.dashboard_widgets = ['overview', 'transactions', 'accounts', 'quick_transfer']
+        profile.save(update_fields=['oobe_completed', 'selected_account_types', 'dashboard_widgets', 'updated_at'])
+        messages.success(request, 'Setup skipped. You can keep using the app.')
+        return redirect('dashboard')
+
+    widgets = request.POST.getlist('widgets') or []
+    if 'overview' not in widgets:
+        widgets = ['overview', *widgets]
+
+    if settings_only:
+        # Settings mode only edits dashboard windows (no account creation/selection changes).
+        profile.oobe_completed = True
+        profile.dashboard_widgets = widgets
+        profile.save(update_fields=['oobe_completed', 'dashboard_widgets', 'updated_at'])
+        messages.success(request, 'Your dashboard layout has been updated.')
+        return redirect('dashboard')
+
+    open_savings = request.POST.get('open_savings') == 'on'
+    open_savers_plus = request.POST.get('open_saversplus') == 'on'
+    accept_ads = request.POST.get('accept_ads') == 'on'
+
+    # Account types: current is mandatory.
+    selected_types = ['current']
+    if open_savings:
+        selected_types.append('savings')
+    if open_savers_plus:
+        if not accept_ads:
+            messages.error(request, 'To open Savers Plus you must agree to have an advert displayed.')
+            return redirect('dashboard')
+        selected_types.append('saversplus')
+
+    # Create optional accounts if selected and not already present.
+    user = request.user
+    if open_savings and not Account.objects.filter(user=user, account_type='savings').exists():
+        Account.objects.create(
+            name=f"{user.first_name or user.username}'s Savings Account",
+            starting_balance=Decimal('0.00'),
+            round_up_enabled=True,
+            user=user,
+            account_type='savings',
+        )
+
+    if open_savers_plus and not Account.objects.filter(user=user, account_type='saversplus').exists():
+        Account.objects.create(
+            name=f"{user.first_name or user.username}'s Savers Plus Account",
+            starting_balance=Decimal('0.00'),
+            round_up_enabled=True,
+            user=user,
+            account_type='saversplus',
+        )
+
+    profile.oobe_completed = True
+    profile.selected_account_types = selected_types
+    profile.dashboard_widgets = widgets
+    profile.save(update_fields=['oobe_completed', 'selected_account_types', 'dashboard_widgets', 'updated_at'])
+
+    messages.success(request, 'Your preferences have been saved.')
     return redirect('dashboard')
 
 class TemplateRegistrationView(View):
@@ -112,8 +184,20 @@ class DashboardView(View):
     def get(self, request):
         if not request.user.is_authenticated:
             return redirect('login')
+
+        profile, _ = UserProfile.objects.get_or_create(user=request.user)
         accounts = Account.objects.filter(user=request.user)
         has_savers_plus = accounts.filter(account_type='saversplus').exists()
+
+        # Auto-complete OOBE for existing users who already have optional accounts.
+        if not profile.oobe_completed:
+            existing_types = set(accounts.values_list('account_type', flat=True))
+            if existing_types - {'current'}:
+                profile.oobe_completed = True
+                profile.selected_account_types = sorted(existing_types)
+                profile.dashboard_widgets = ['overview', 'transactions', 'accounts', 'quick_transfer']
+                profile.save(update_fields=['oobe_completed', 'selected_account_types', 'dashboard_widgets', 'updated_at'])
+
         total_balance = sum(account.starting_balance for account in accounts)
         recent_transactions = Transaction.objects.filter(
             from_account__in=accounts
@@ -126,6 +210,11 @@ class DashboardView(View):
             'total_balance': total_balance,
             'recent_transactions': recent_transactions,
             'total_savings': total_savings,
+            'show_oobe': not profile.oobe_completed,
+            'oobe_selected_account_types': profile.selected_account_types or ['current'],
+            'oobe_dashboard_widgets': profile.dashboard_widgets or ['overview', 'transactions', 'accounts', 'quick_transfer'],
+            'savings_interest_rate_percent': f"{(Account.SAVINGS_INTEREST_RATE * 100):.1f}",
+            'savers_plus_interest_rate_percent': f"{(Account.SAVERS_PLUS_INTEREST_RATE * 100):.1f}",
         }
         return render(request, 'banking/dashboard.html', context)
 
