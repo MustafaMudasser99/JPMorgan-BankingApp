@@ -123,6 +123,10 @@ p { margin: 6px 0 12px; color: var(--color-muted); }
   padding: 22px;
   box-shadow: var(--shadow);
 }
+.card.card-savers-plus {
+  border-color: rgba(251, 191, 36, 0.75);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(251, 191, 36, 0.22);
+}
 .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .pill {
   border: 1px solid var(--color-border);
@@ -167,6 +171,16 @@ p { margin: 6px 0 12px; color: var(--color-muted); }
 }
 .link-list li:last-child { border-bottom: none; }
 .link-list.dense li { padding: 8px 0; }
+
+/* Balance page: only highlight Savers Plus when its tab is selected. */
+.filter-saversplus .link-list li.account-row.account-savers-plus {
+  padding-left: 12px;
+  border-left: 3px solid rgba(251, 191, 36, 0.85);
+  border-bottom-color: rgba(251, 191, 36, 0.25);
+}
+.filter-saversplus .bar-line.account-savers-plus {
+  border-color: rgba(251, 191, 36, 0.55);
+}
 
 .table-card { padding: 0; overflow: hidden; }
 .table-row {
@@ -264,6 +278,32 @@ input.error, select.error { border-color: #ef4444; background-color: rgba(239, 6
   background: rgba(239, 68, 68, 0.08);
   color: var(--color-text);
 }
+
+/* Modal (native <dialog>) */
+.modal {
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--color-text);
+}
+.modal::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+.modal-card {
+  width: min(560px, calc(100vw - 36px));
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+.modal-list {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--color-muted);
+}
+.modal-list strong { color: var(--color-text); }
 
 @keyframes fade {
   from { opacity: 0; transform: translateY(6px); }

@@ -6,7 +6,7 @@ from django.urls import path, include
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from banking.auth_views import LoginView, UserAccountsView
-from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView
+from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView, apply_savers_plus, UserManagementView, delete_user
 from banking.login_views import LoginView as WebLoginView, logout_view, api_login
 
 
@@ -34,6 +34,9 @@ urlpatterns = [
     path('banking/login/', WebLoginView.as_view(), name='login'),
     path('banking/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('banking/balance/', BalanceView.as_view(), name='balance-web'),
+    path('banking/apply-savers-plus/', apply_savers_plus, name='apply-savers-plus'),
+    path('banking/users/', UserManagementView.as_view(), name='user-management'),
+    path('banking/users/<int:user_id>/delete/', delete_user, name='delete-user'),
     path('banking/logout/', logout_view, name='logout'),
     path('banking/api-login/', api_login, name='api-login-web'),
 ]

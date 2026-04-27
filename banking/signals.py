@@ -12,7 +12,9 @@ def create_default_accounts(sender, instance, created, **kwargs):
     """
     if created:
         # Check if the user already has accounts (to prevent duplicates)
-        if not Account.objects.filter(user=instance).exists():
+        existing_qs = Account.objects.filter(user=instance)
+
+        if not existing_qs.exists():
             # Create Current Account
             Account.objects.create(
                 name=f"{instance.first_name or instance.username}'s Current Account",

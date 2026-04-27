@@ -9,8 +9,29 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_POST
 from .models import Account, Transaction
 from decimal import Decimal
+
+@login_required(login_url='login')
+def apply_savers_plus(request):
+    if request.method != 'POST':
+        return redirect('dashboard')
+
+    if Account.objects.filter(user=request.user, account_type='saversplus').exists():
+        messages.error(request, 'You already have a Savers Plus account.')
+        return redirect('dashboard')
+
+    Account.objects.create(
+        name=f"{request.user.first_name or request.user.username}'s Savers Plus Account",
+        starting_balance=Decimal('0.00'),
+        round_up_enabled=True,
+        user=request.user,
+        account_type='saversplus',
+    )
+
+    messages.success(request, 'Savers Plus account created.')
+    return redirect('dashboard')
 
 class TemplateRegistrationView(View):
     """
@@ -57,23 +78,9 @@ class TemplateRegistrationView(View):
                 last_name=last_name
             )
             
-            # Create default Current Account
-            current_account = Account.objects.create(
-                name=f"{first_name or username}'s Current Account",
-                starting_balance=Decimal('1000.00'),
-                round_up_enabled=False,
-                user=user,
-                account_type='current'
-            )
-            
-            # Create default Savings Account
-            savings_account = Account.objects.create(
-                name=f"{first_name or username}'s Savings Account",
-                starting_balance=Decimal('0.00'),
-                round_up_enabled=True,
-                user=user,
-                account_type='savings'
-            )
+            # Default accounts are created by the post_save(User) signal to avoid
+            # double-creating them across multiple registration flows.
+            accounts = Account.objects.filter(user=user)
             
             # Success message
             messages.success(request, 'Registration successful! Two accounts created.')
@@ -85,17 +92,12 @@ class TemplateRegistrationView(View):
                     'message': 'Registration successful',
                     'accounts': [
                         {
-                            'id': str(current_account.id),
-                            'name': current_account.name,
-                            'type': current_account.get_account_type_display(),
-                            'balance': str(current_account.starting_balance)
-                        },
-                        {
-                            'id': str(savings_account.id),
-                            'name': savings_account.name,
-                            'type': savings_account.get_account_type_display(),
-                            'balance': str(savings_account.starting_balance)
+                            'id': str(account.id),
+                            'name': account.name,
+                            'type': account.get_account_type_display(),
+                            'balance': str(account.starting_balance)
                         }
+                        for account in accounts
                     ]
                 })
             return redirect('login')  # Redirect to login page
@@ -111,6 +113,7 @@ class DashboardView(View):
         if not request.user.is_authenticated:
             return redirect('login')
         accounts = Account.objects.filter(user=request.user)
+        has_savers_plus = accounts.filter(account_type='saversplus').exists()
         total_balance = sum(account.starting_balance for account in accounts)
         recent_transactions = Transaction.objects.filter(
             from_account__in=accounts
@@ -119,6 +122,7 @@ class DashboardView(View):
 
         context = {
             'accounts': accounts,
+            'has_savers_plus': has_savers_plus,
             'total_balance': total_balance,
             'recent_transactions': recent_transactions,
             'total_savings': total_savings,
@@ -170,24 +174,7 @@ def register_api(request):
                 first_name=first_name,
                 last_name=last_name
             )
-            
-            # Create default Current Account
-            current_account = Account.objects.create(
-                name=f"{first_name or username}'s Current Account",
-                starting_balance=Decimal('1000.00'),
-                round_up_enabled=False,
-                user=user,
-                account_type='current'
-            )
-            
-            # Create default Savings Account
-            savings_account = Account.objects.create(
-                name=f"{first_name or username}'s Savings Account",
-                starting_balance=Decimal('0.00'),
-                round_up_enabled=True,
-                user=user,
-                account_type='savings'
-            )
+            accounts = Account.objects.filter(user=user)
             
             # Return success response
             return JsonResponse({
@@ -195,17 +182,12 @@ def register_api(request):
                 'user_id': user.id,
                 'accounts': [
                     {
-                        'id': str(current_account.id),
-                        'name': current_account.name,
-                        'type': current_account.get_account_type_display(),
-                        'balance': str(current_account.starting_balance)
-                    },
-                    {
-                        'id': str(savings_account.id),
-                        'name': savings_account.name,
-                        'type': savings_account.get_account_type_display(),
-                        'balance': str(savings_account.starting_balance)
+                        'id': str(account.id),
+                        'name': account.name,
+                        'type': account.get_account_type_display(),
+                        'balance': str(account.starting_balance)
                     }
+                    for account in accounts
                 ]
             }, status=201)
             
@@ -230,6 +212,17 @@ class BalanceView(View):
             
             # Get user accounts
             accounts = Account.objects.filter(user=request.user)
+
+            account_type_filters = []
+            seen_account_types = set()
+            for account in accounts:
+                if account.account_type in seen_account_types:
+                    continue
+                seen_account_types.add(account.account_type)
+                account_type_filters.append({
+                    'key': account.account_type,
+                    'label': account.get_account_type_display(),
+                })
             
             # Get recent transactions
             transactions = []
@@ -271,20 +264,25 @@ class BalanceView(View):
             total_balance = sum(account.get_balance() for account in accounts)
             
             # Calculate percentages for progress bars
-            account_balances = {}
+            balance_rows = []
             for account in accounts:
                 balance = account.get_balance()
-                account_balances[account.name] = {
+                percentage = int((balance / total_balance * 100) if total_balance > 0 else 0)
+                balance_rows.append({
+                    'name': account.name,
                     'balance': balance,
-                    'percentage': int((balance / total_balance * 100) if total_balance > 0 else 0)
-                }
+                    'percentage': percentage,
+                    'account_type': account.account_type,
+                    'account_type_display': account.get_account_type_display(),
+                })
             
             context = {
                 'accounts': accounts,
                 'transactions': transactions,
                 'total_balance': total_balance,
-                'account_balances': account_balances,
-                'logo_url': static('banking/images/logo.png')
+                'balance_rows': balance_rows,
+                'logo_url': static('banking/images/logo.png'),
+                'account_type_filters': account_type_filters,
             }
             
             return render(request, self.template_name, context)
@@ -449,3 +447,87 @@ def export_transactions_csv(request):
                 ])
         
         return response
+
+
+@method_decorator(login_required(login_url='login'), name='dispatch')
+class UserManagementView(View):
+    """
+    Staff-only page for listing, creating, and deleting users.
+    """
+    template_name = 'banking/users.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'You do not have permission to manage users.')
+            return redirect('dashboard')
+
+        users = User.objects.all().order_by('username')
+        return render(request, self.template_name, {'users': users})
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create a new user (and default accounts) from a simple form.
+        """
+        if not request.user.is_staff:
+            messages.error(request, 'You do not have permission to manage users.')
+            return redirect('dashboard')
+
+        username = (request.POST.get('username') or '').strip()
+        password = request.POST.get('password') or ''
+        email = (request.POST.get('email') or '').strip()
+        first_name = (request.POST.get('first_name') or '').strip()
+        last_name = (request.POST.get('last_name') or '').strip()
+        is_staff = request.POST.get('is_staff') == 'on'
+
+        if not username or not password:
+            messages.error(request, 'Username and password are required.')
+            return redirect('user-management')
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return redirect('user-management')
+
+        try:
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            if is_staff:
+                user.is_staff = True
+                user.save(update_fields=['is_staff'])
+            # Default accounts are created by the post_save(User) signal.
+
+            messages.success(request, f'User "{username}" created.')
+        except Exception as e:
+            messages.error(request, f'Error creating user: {str(e)}')
+
+        return redirect('user-management')
+
+
+@require_POST
+@login_required(login_url='login')
+def delete_user(request, user_id: int):
+    """
+    Staff-only user delete (POST-only). Cascades to accounts via FK.
+    """
+    if not request.user.is_staff:
+        messages.error(request, 'You do not have permission to manage users.')
+        return redirect('dashboard')
+
+    if request.user.id == user_id:
+        messages.error(request, "You can't delete your own user while logged in.")
+        return redirect('user-management')
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('user-management')
+
+    username = user.username
+    user.delete()
+    messages.success(request, f'User "{username}" deleted.')
+    return redirect('user-management')

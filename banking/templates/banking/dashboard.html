@@ -1,9 +1,20 @@
 {% extends 'banking/base.html' %}
 {% load static %}
+{% load account_tags %}
 
 {% block title %}Dashboard - Extra Credit Union{% endblock %}
 
 {% block content %}
+    {% if has_savers_plus %}
+        <section class="ad-slot ad-slot-banner" aria-label="Advertisement">
+            <div class="ad-slot-inner">
+                <div class="ad-slot-label">Advertisement placeholder</div>
+                <div class="ad-slot-title">Your banner ad goes here</div>
+                <div class="ad-slot-meta">Size: 728×90 (example) · Savers Plus</div>
+            </div>
+        </section>
+    {% endif %}
+
     <div class="dashboard-grid">
         <div>
             <div class="section-heading">
@@ -49,34 +60,36 @@
             </div>
         </div>
 
-        <div class="card">
-            <h2>Recent Transactions</h2>
-            <div id="recent-transactions">
-                {% for transaction in recent_transactions %}
-                <div class="transaction-item">
-                    <div class="transaction-details">
-                        <h4>
-                            {% if transaction.business %}
-                                {{ transaction.business.name }}
+        <div>
+            <div class="card">
+                <h2>Recent Transactions</h2>
+                <div id="recent-transactions">
+                    {% for transaction in recent_transactions %}
+                    <div class="transaction-item">
+                        <div class="transaction-details">
+                            <h4>
+                                {% if transaction.business %}
+                                    {{ transaction.business.name }}
+                                {% else %}
+                                    {{ transaction.transaction_type|title }}
+                                {% endif %}
+                            </h4>
+                            <div class="transaction-meta">
+                                {{ transaction.timestamp|date:"M d, Y" }} • {{ transaction.transaction_type|title }}
+                            </div>
+                        </div>
+                        <div class="transaction-amount {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}transaction-deposit{% else %}transaction-payment{% endif %}">
+                            {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}
+                                +£{{ transaction.amount }}
                             {% else %}
-                                {{ transaction.transaction_type|title }}
+                                -£{{ transaction.amount }}
                             {% endif %}
-                        </h4>
-                        <div class="transaction-meta">
-                            {{ transaction.timestamp|date:"M d, Y" }} • {{ transaction.transaction_type|title }}
                         </div>
                     </div>
-                    <div class="transaction-amount {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}transaction-deposit{% else %}transaction-payment{% endif %}">
-                        {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}
-                            +£{{ transaction.amount }}
-                        {% else %}
-                            -£{{ transaction.amount }}
-                        {% endif %}
-                    </div>
+                    {% empty %}
+                    <div class="loading">No recent transactions</div>
+                    {% endfor %}
                 </div>
-                {% empty %}
-                <div class="loading">No recent transactions</div>
-                {% endfor %}
             </div>
         </div>
     </div>
@@ -85,10 +98,34 @@
         <div>
             <h2>Your Accounts</h2>
         </div>
+        <button type="button" class="secondary" id="open-savers-plus-dialog">Apply for Savers Plus</button>
     </div>
+
+    <dialog class="modal" id="savers-plus-dialog" aria-labelledby="savers-plus-title">
+        <div class="modal-card">
+            <p class="eyebrow">New account type</p>
+            <h2 id="savers-plus-title" style="margin-top: 0;">Savers Plus</h2>
+            <p class="muted">
+                Savers Plus offers a slightly higher interest rate than a standard savings account.
+                In exchange, you’ll be shown tailored advertisements and offers in-app.
+            </p>
+            <ul class="modal-list">
+                <li><strong>Higher interest</strong> than standard savings</li>
+                <li><strong>Ads enabled</strong> to fund the higher rate</li>
+                <li><strong>No fee</strong> to open</li>
+            </ul>
+
+            <form method="post" action="{% url 'apply-savers-plus' %}" class="cta-row" style="margin-top: 16px;">
+                {% csrf_token %}
+                <button type="submit" class="primary">Yes, open Savers Plus</button>
+                <button type="button" class="secondary" id="close-savers-plus-dialog">No, thanks</button>
+            </form>
+        </div>
+    </dialog>
+
     <div class="grid two">
         {% for account in accounts %}
-            <article class="card">
+            <article class="card card-{{ account.get_account_type_display|account_type_slug }}">
                 <div class="card-head">
                     <div>
                         <p class="eyebrow">{{ account.get_account_type_display }} account</p>
@@ -115,6 +152,29 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const dialog = document.getElementById('savers-plus-dialog');
+        const openBtn = document.getElementById('open-savers-plus-dialog');
+        const closeBtn = document.getElementById('close-savers-plus-dialog');
+
+        if (dialog && openBtn) {
+            openBtn.addEventListener('click', () => {
+                if (typeof dialog.showModal === 'function') {
+                    dialog.showModal();
+                } else {
+                    dialog.setAttribute('open', 'open');
+                }
+            });
+        }
+
+        if (dialog && closeBtn) {
+            closeBtn.addEventListener('click', () => dialog.close());
+        }
+
+        if (dialog) {
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) dialog.close();
+            });
+        }
     });
 </script>
 {% endblock %}

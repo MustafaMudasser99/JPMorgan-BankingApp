@@ -23,6 +23,7 @@ Thumbs.db
 # Ignore IDE/Editor specific files
 .vscode/
 .idea/
+.cursor/
 .venv
 *.sublime-workspace
 *.sublime-project
