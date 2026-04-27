@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -90,3 +91,44 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount}"
+    
+
+class SavingsTracker(models.Model):
+    # 1. Link directly to the Account, restricted to 'savings' type
+    account = models.OneToOneField(
+        'Account', 
+        on_delete=models.CASCADE, 
+        related_name='savings_tracker',
+        limit_choices_to={'account_type': 'savings'} 
+    )
+    
+    savings_enabled = models.BooleanField(default=False)
+    savings_goal = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    # current_amount Field REMOVED. Replaced with the @property below.
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Savings Tracker for {self.account.name}: {self.current_amount}/{self.savings_goal}"
+
+    @property
+    def current_amount(self):
+        """
+        Dynamically calculates the current amount based on the linked savings account.
+        """
+        # Calculate incoming and outgoing transactions for the linked account
+        incoming = self.account.incoming_transactions.aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        outgoing = self.account.outgoing_transactions.aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        
+        # Assuming outgoing transactions are stored as positive numbers that need to be subtracted. 
+        # (If your system stores them as negative numbers, change the minus to a plus).
+        balance = self.account.starting_balance + incoming - outgoing
+        return balance
+
+    def progress_percentage(self):
+        """Calculate how close the user is to their goal."""
+        if self.savings_goal <= 0:
+            return 0
+        return (self.current_amount / self.savings_goal) * 100
