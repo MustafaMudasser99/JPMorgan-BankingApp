@@ -1,4 +1,5 @@
 import uuid
+import math
 from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
@@ -58,12 +59,9 @@ class Account(models.Model):
         return self.name
 
     def get_balance(self):
-        """
-        Calculate the current balance from starting balance + transactions.
-        """
-        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
-        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
-        return self.starting_balance + incoming + outgoing
+        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        return self.starting_balance + incoming - outgoing
 
     def get_interest_rate(self):
         """
@@ -92,18 +90,9 @@ class Card(models.Model):
         return f"Card ****{self.card_number[-4:]} for {self.account.name}"
         
     def get_balance(self):
-        """
-        Calculate the current balance by adding all transactions to the starting balance.
-        """
-        # Get all outgoing transactions (negative amounts)
-        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
-        
-        # Get all incoming transactions (positive amounts)
-        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
-        
-        # Return the balance
-        return self.starting_balance + incoming + outgoing
-
+        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        return self.starting_balance + incoming - outgoing
 class Business(models.Model):
     id = models.CharField(primary_key=True, max_length=50)
     name = models.CharField(max_length=100)
@@ -133,6 +122,24 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.transaction_type} - {self.amount}"
     
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+
+        super().save(*args, **kwargs)
+        if is_new and self.transaction_type == 'payment' and self.from_account.round_up_enabled:
+            savings_account = self.from_account.user.accounts.filter(account_type='savings').first()
+            if savings_account:
+                amount_val = abs(Decimal(str(self.amount)))
+                ceiling_val = Decimal(math.ceil(amount_val))
+                round_up_amount = ceiling_val - amount_val
+
+                if round_up_amount > 0:
+                    Transaction.objects.create(
+                        transaction_type='collect_roundup',
+                        amount=round_up_amount,
+                        from_account=self.from_account,
+                        to_account=savings_account
+                    )
 
 class SavingsTracker(models.Model):
     # 1. Link directly to the Account, restricted to 'savings' type
@@ -156,15 +163,8 @@ class SavingsTracker(models.Model):
 
     @property
     def current_amount(self):
-        """
-        Dynamically calculates the current amount based on the linked savings account.
-        """
-        # Calculate incoming and outgoing transactions for the linked account
         incoming = self.account.incoming_transactions.aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
         outgoing = self.account.outgoing_transactions.aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
-        
-        # Assuming outgoing transactions are stored as positive numbers that need to be subtracted. 
-        # (If your system stores them as negative numbers, change the minus to a plus).
         balance = self.account.starting_balance + incoming - outgoing
         return balance
 
