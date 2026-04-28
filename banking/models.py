@@ -4,6 +4,8 @@ from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from decimal import Decimal
+from django.utils import timezone
+from datetime import timedelta
 
 class UserProfile(models.Model):
     """
@@ -59,8 +61,8 @@ class Account(models.Model):
         return self.name
 
     def get_balance(self):
-        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
-        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        outgoing = Transaction.objects.filter(from_account=self, status='completed').aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        incoming = Transaction.objects.filter(to_account=self, status='completed').aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
         return self.starting_balance + incoming - outgoing
 
     def get_interest_rate(self):
@@ -90,8 +92,8 @@ class Card(models.Model):
         return f"Card ****{self.card_number[-4:]} for {self.account.name}"
         
     def get_balance(self):
-        outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
-        incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        outgoing = Transaction.objects.filter(from_account=self, status='completed').aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
+        incoming = Transaction.objects.filter(to_account=self, status='completed').aggregate(models.Sum('amount'))['amount__sum'] or Decimal('0.00')
         return self.starting_balance + incoming - outgoing
 class Business(models.Model):
     id = models.CharField(primary_key=True, max_length=50)
@@ -112,12 +114,21 @@ class Transaction(models.Model):
         ('roundup_reclaim', 'Round Up Reclaim'),
     ]
 
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('completed', 'Completed'),
+        ('denied', 'Denied'),
+        ('expired', 'Timed Out'),
+    ]
+
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     from_account = models.ForeignKey(Account, related_name='outgoing_transactions', on_delete=models.CASCADE)
     to_account = models.ForeignKey(Account, related_name='incoming_transactions', on_delete=models.CASCADE, null=True, blank=True)
     business = models.ForeignKey(Business, related_name='transactions', on_delete=models.CASCADE, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField( max_length=20, choices=STATUS_CHOICES, default='completed')
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount}"

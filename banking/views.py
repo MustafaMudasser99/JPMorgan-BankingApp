@@ -11,6 +11,23 @@ from .serializers import AccountSerializer, TransactionSerializer, BusinessSeria
 from decimal import Decimal
 import os
 import subprocess
+from django.utils import timezone
+from datetime import time
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from datetime import timedelta
+from .models import Account, Transaction
+from rest_framework.response import Response
+from rest_framework import status
+
+def is_security_window_active():
+    now_time = timezone.localtime(timezone.now()).time()
+    
+    start_time = time(0, 0, 0)
+    end_time = time(6, 0, 0)
+    
+    return start_time <= now_time <= end_time
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -331,6 +348,54 @@ class TransactionViewSet(viewsets.ModelViewSet):
             .values('business__name') \
             .annotate(total_spent=Sum('amount'))
         return Response(sanctioned_transactions)
+    
+    @action(detail=False, methods=['get'])
+    def check_pending(self, request):
+        """
+        Endpoint for the frontend to poll. 
+        Returns the most recent pending transaction for the logged-in user.
+        """
+        pending_tx = Transaction.objects.filter(
+            from_account__user=request.user, 
+            status='pending'
+        ).order_by('-timestamp').first()
+
+        if pending_tx:
+            # Check if it has expired before showing it to the user
+            if pending_tx.is_expired():
+                pending_tx.status = 'expired'
+                pending_tx.save()
+                return Response({'has_pending': False})
+
+            return Response({
+                'has_pending': True,
+                'id': pending_tx.id,
+                'amount': str(pending_tx.amount)
+            })
+        
+        return Response({'has_pending': False})
+
+    @action(detail=True, methods=['post'])
+    def finalize_auth(self, request, pk=None):
+        """
+        Endpoint to process the user's Accept/Deny click.
+        """
+        tx = self.get_object()
+        
+        # Security: Ensure the transaction belongs to the person clicking
+        if tx.from_account.user != request.user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        decision = request.data.get('action') # Expecting 'approve' or 'deny'
+        
+        if decision == 'approve':
+            tx.status = 'completed'
+            tx.save()
+            return Response({'message': 'Payment Authorized'})
+        else:
+            tx.status = 'denied'
+            tx.save()
+            return Response({'message': 'Payment Declined'})
 
 
 class BusinessViewSet(viewsets.ModelViewSet):
@@ -344,3 +409,76 @@ class BusinessViewSet(viewsets.ModelViewSet):
         if self.action in ['update', 'partial_update']:
             return [IsAuthenticated()]
         return [IsAdminUser()]
+    
+
+@csrf_exempt
+def merchant_payment_request(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        account_id = data.get('account_id')
+        amount = Decimal(str(data.get('amount')))
+        
+        # 1. Fetch the account
+        account = Account.objects.get(id=account_id)
+
+        # 2. Determine initial status based on the time
+        if is_security_window_active():
+            status = 'pending'
+            # Set the 5-minute expiry window
+            expires_at = timezone.now() + timedelta(minutes=5)
+        else:
+            status = 'completed'
+            expires_at = None
+
+        # 3. Create the Transaction
+        # Note: to_account is None because it's an external merchant
+        new_tx = Transaction.objects.create(
+            transaction_type='payment',
+            amount=amount,
+            from_account=account,
+            to_account=None,
+            status=status,
+            expires_at=expires_at
+        )
+
+        # 4. Return the response
+        if status == 'pending':
+            return JsonResponse({
+                'status': 'pending',
+                'message': 'Authorization required. User has 5 minutes to approve.',
+                'transaction_id': str(new_tx.id),
+                'expires_at': expires_at.isoformat()
+            }, status=202) # 202 Accepted: Processing has started but isn't finished
+
+        return JsonResponse({
+            'status': 'completed',
+            'message': 'Payment successful',
+            'transaction_id': str(new_tx.id)
+        }, status=201) # 201 Created
+
+    except Account.DoesNotExist:
+        return JsonResponse({'error': 'Account not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    
+@csrf_exempt
+def check_payment_status(request, transaction_id):
+    """
+    Endpoint for the Merchant to check if the payment was approved.
+    """
+    # Using the request object to enforce the correct HTTP method
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET requests are allowed'}, status=405)
+
+    try:
+        tx = Transaction.objects.get(id=transaction_id)
+        return JsonResponse({
+            'transaction_id': str(tx.id),
+            'status': tx.status, 
+            'amount': str(tx.amount)
+        })
+    except Transaction.DoesNotExist:
+        return JsonResponse({'error': 'Transaction not found'}, status=404)

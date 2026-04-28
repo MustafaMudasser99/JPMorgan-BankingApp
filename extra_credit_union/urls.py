@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from banking.auth_views import LoginView, UserAccountsView
 from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView, SavingsView, update_savings_api, apply_savers_plus, oobe_settings, UserManagementView, delete_user
 from banking.login_views import LoginView as WebLoginView, logout_view, api_login
-
+from banking.views import merchant_payment_request, TransactionViewSet, check_payment_status
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -44,4 +44,12 @@ urlpatterns = [
     
     # Savings API endpoint
     path('banking/api/savings/update/', update_savings_api, name='update-savings-api'),
+    path('api/v1/provider/pay/', merchant_payment_request, name='merchant_pay'),
+    # Merchant/Provider endpoint (Standalone Function)
+    path('api/v1/provider/pay/', merchant_payment_request, name='merchant_pay'),
+
+    # User Approval endpoints (ViewSet Actions)
+    path('api/transactions/check_pending/', TransactionViewSet.as_view({'get': 'check_pending'}), name='check-pending'),
+    path('api/transactions/<uuid:pk>/finalize_auth/', TransactionViewSet.as_view({'post': 'finalize_auth'}), name='finalize-auth'),
+    path('api/v1/provider/status/<uuid:transaction_id>/', check_payment_status, name='merchant_check_status'),
 ]
