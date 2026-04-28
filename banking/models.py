@@ -131,3 +131,19 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount}"
+
+class ChatMessage(models.Model):
+    """
+    Stores the conversation history for the AI Assistant.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_history")
+    text = models.TextField()
+    # 'user' for human messages, 'assistant' for bot replies
+    role = models.CharField(max_length=10, choices=[('user', 'User'), ('assistant', 'Assistant')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.role}: {self.text[:20]}"    
