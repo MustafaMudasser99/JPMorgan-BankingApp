@@ -518,7 +518,7 @@ class BalanceView(View):
                     # Create transaction
                     Transaction.objects.create(
                         transaction_type="transfer",
-                        amount=-amount,
+                        amount=amount,
                         from_account=from_account,
                         to_account=to_account
                     )
@@ -563,7 +563,7 @@ class BalanceView(View):
                     # Create transaction
                     Transaction.objects.create(
                         transaction_type="payment",
-                        amount=-amount,
+                        amount=amount,
                         from_account=from_account,
                         to_account=None
                     )
