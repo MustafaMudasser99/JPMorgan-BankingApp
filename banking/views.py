@@ -47,23 +47,9 @@ class UserRegistrationView(APIView):
                 last_name=last_name
             )
             
-            # Create default Current Account with 1000 starting balance
-            current_account = Account.objects.create(
-                name=f"{first_name or username}'s Current Account",
-                starting_balance=Decimal('1000.00'),
-                round_up_enabled=False,
-                user=user,
-                account_type='current'
-            )
-            
-            # Create default Savings Account with 0 starting balance
-            savings_account = Account.objects.create(
-                name=f"{first_name or username}'s Savings Account",
-                starting_balance=Decimal('0.00'),
-                round_up_enabled=True,  # Enable round-up for savings by default
-                user=user,
-                account_type='savings'
-            )
+            # Default accounts are created by the post_save(User) signal to avoid
+            # double-creating them across multiple registration flows.
+            accounts = Account.objects.filter(user=user)
             
             # Return success response with account details
             return Response({
@@ -71,17 +57,12 @@ class UserRegistrationView(APIView):
                 "user_id": user.id,
                 "accounts": [
                     {
-                        "id": str(current_account.id),
-                        "name": current_account.name,
-                        "type": current_account.get_account_type_display(),
-                        "balance": str(current_account.starting_balance)
-                    },
-                    {
-                        "id": str(savings_account.id),
-                        "name": savings_account.name,
-                        "type": savings_account.get_account_type_display(),
-                        "balance": str(savings_account.starting_balance)
+                        "id": str(account.id),
+                        "name": account.name,
+                        "type": account.get_account_type_display(),
+                        "balance": str(account.starting_balance)
                     }
+                    for account in accounts
                 ]
             }, status=status.HTTP_201_CREATED)
             
@@ -107,7 +88,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         # For list and retrieve actions, require authentication
-        if self.action in ['list', 'retrieve', 'my_accounts', 'roundups', 'spending_trends', 'current_balance', 'user_account']:
+        if self.action in ['list', 'retrieve', 'my_accounts', 'roundups', 'spending_trends', 'current_balance', 'user_account', 'apply_savers_plus']:
             return [IsAuthenticated()]
         # For create, update, delete actions, require admin privileges
         elif self.action in ['create', 'update', 'partial_update', 'destroy', 'manager_list']:
@@ -116,6 +97,31 @@ class AccountViewSet(viewsets.ModelViewSet):
         elif self.action in ['enable_roundup', 'reclaim_roundup']:
             return [IsAuthenticated()]
         return [AllowAny()]
+
+    @action(detail=False, methods=['post'], url_path='apply-savers-plus', permission_classes=[IsAuthenticated])
+    def apply_savers_plus(self, request):
+        """
+        Fast-path endpoint for end users to create a Savers Plus account.
+        This intentionally ignores any user/account_type coming from the client.
+        """
+        user = request.user
+
+        if Account.objects.filter(user=user, account_type='saversplus').exists():
+            return Response(
+                {"detail": "You already have a Savers Plus account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        created = Account.objects.create(
+            name=f"{user.first_name or user.username}'s Savers Plus Account",
+            starting_balance=Decimal('0.00'),
+            round_up_enabled=True,
+            user=user,
+            account_type='saversplus',
+        )
+
+        serializer = self.get_serializer(created)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
         
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_accounts(self, request):

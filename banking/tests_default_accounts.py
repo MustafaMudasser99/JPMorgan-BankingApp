@@ -8,7 +8,7 @@ from decimal import Decimal
 
 class DefaultAccountsTestCase(TestCase):
     def test_accounts_created_on_user_save(self):
-        """Test that default accounts are created when a user is saved via signal"""
+        """Test that the mandatory Current account is created via signal"""
         # Create a user
         user = User.objects.create_user(
             username="testuser",
@@ -18,24 +18,20 @@ class DefaultAccountsTestCase(TestCase):
             last_name="User"
         )
         
-        # Check that two accounts were created
+        # Check that the mandatory Current account was created
         accounts = Account.objects.filter(user=user)
-        self.assertEqual(accounts.count(), 2)
+        self.assertEqual(accounts.count(), 1)
         
         # Verify account types
         current_account = accounts.get(account_type='current')
-        savings_account = accounts.get(account_type='savings')
         
         self.assertEqual(current_account.name, "Test's Current Account")
-        self.assertEqual(savings_account.name, "Test's Savings Account")
         
         # Verify balances
         self.assertEqual(current_account.starting_balance, Decimal('1000.00'))
-        self.assertEqual(savings_account.starting_balance, Decimal('0.00'))
         
         # Verify round-up settings
         self.assertFalse(current_account.round_up_enabled)
-        self.assertTrue(savings_account.round_up_enabled)
 
 class UserRegistrationAPITestCase(APITestCase):
     def test_user_registration_with_accounts(self):
@@ -55,7 +51,7 @@ class UserRegistrationAPITestCase(APITestCase):
         # Check response
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('accounts', response.data)
-        self.assertEqual(len(response.data['accounts']), 2)
+        self.assertEqual(len(response.data['accounts']), 1)
         
         # Verify the user was created
         self.assertTrue(User.objects.filter(username='newuser').exists())
@@ -63,20 +59,14 @@ class UserRegistrationAPITestCase(APITestCase):
         # Verify accounts were created
         user = User.objects.get(username='newuser')
         accounts = Account.objects.filter(user=user)
-        
-        # FIXME: Temporarily changed expectation from 2 to 4 due to signal 
-        # double-triggering or view/signal overlap. This needs investigation 
-        # to prevent duplicate account creation in production.
-        self.assertEqual(accounts.count(), 4)
+        self.assertEqual(accounts.count(), 1)
         
         # Verify account details in response
         account_types = [acc['type'] for acc in response.data['accounts']]
         self.assertIn('Current', account_types)
-        self.assertIn('Savings', account_types)
         
         # Check database account types
         self.assertTrue(accounts.filter(account_type='current').exists())
-        self.assertTrue(accounts.filter(account_type='savings').exists())
         
     def test_registration_with_duplicate_username(self):
         """Test registration with an existing username"""

@@ -95,7 +95,7 @@ class BalanceViewTestCase(TestCase):
         self.assertIn('accounts', response.context)
         self.assertIn('transactions', response.context)
         self.assertIn('total_balance', response.context)
-        self.assertIn('account_balances', response.context)
+        self.assertIn('balance_rows', response.context)
         
         # Check that the accounts are in the context
         # The test user has 2 accounts, but there might be other accounts in the system

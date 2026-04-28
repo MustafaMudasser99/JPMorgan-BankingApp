@@ -1,0 +1,97 @@
+{% extends "banking/base.html" %}
+{% load static %}
+
+{% block title %}User management · CryptoKnights Banking{% endblock %}
+
+{% block content %}
+<section class="shell">
+    <div class="panel">
+        <div class="panel-head">
+            <div>
+                <h2 style="margin: 0;">User management</h2>
+                <p style="margin: 6px 0 0; color: var(--muted);">Create and delete users (staff only).</p>
+            </div>
+            <a class="ghost" href="/banking/dashboard/">Back</a>
+        </div>
+
+        <div class="grid" style="gap: 14px; margin-top: 16px;">
+            <div class="card" style="padding: 16px;">
+                <h3 style="margin-top: 0;">Create user</h3>
+                <form method="POST" action="{% url 'user-management' %}">
+                    {% csrf_token %}
+                    <div class="grid" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+                        <input type="text" name="username" placeholder="Username" required />
+                        <input type="password" name="password" placeholder="Password" required />
+                        <input type="text" name="first_name" placeholder="First name" />
+                        <input type="text" name="last_name" placeholder="Last name" />
+                        <input type="email" name="email" placeholder="Email" style="grid-column: 1 / -1;" />
+                    </div>
+
+                    <label style="display: inline-flex; gap: 8px; align-items: center; margin-top: 10px;">
+                        <input type="checkbox" name="is_staff" />
+                        Staff user
+                    </label>
+
+                    <div style="margin-top: 12px;">
+                        <button type="submit">Create user</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card" style="padding: 16px;">
+                <h3 style="margin-top: 0;">Existing users</h3>
+
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left;">
+                                <th style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">Username</th>
+                                <th style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">Name</th>
+                                <th style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">Email</th>
+                                <th style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">Staff</th>
+                                <th style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.08);"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                                <tr>
+                                    <td style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                        {{ u.username }}
+                                        {% if u.id == request.user.id %}
+                                            <span class="pill" style="margin-left: 8px;">You</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                        {{ u.first_name }} {{ u.last_name }}
+                                    </td>
+                                    <td style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">{{ u.email }}</td>
+                                    <td style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
+                                        {% if u.is_staff %}Yes{% else %}No{% endif %}
+                                    </td>
+                                    <td style="padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: right;">
+                                        {% if u.id != request.user.id %}
+                                            <form method="POST" action="{% url 'delete-user' u.id %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="danger" onclick="return confirm('Delete user {{ u.username }}? This will also delete their accounts.');">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <span style="color: var(--muted);">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" style="padding: 12px 8px; color: var(--muted);">No users found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+

@@ -2,12 +2,39 @@ import uuid
 from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
+from decimal import Decimal
+
+class UserProfile(models.Model):
+    """
+    Stores persistent per-user preferences for the web experience.
+    """
+    DASHBOARD_WIDGET_CHOICES = [
+        ('overview', 'Account overview'),
+        ('transactions', 'Transactions'),
+        ('accounts', 'Accounts'),
+        ('quick_transfer', 'Quick Transfer menu'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+
+    oobe_completed = models.BooleanField(default=False)
+    selected_account_types = models.JSONField(default=list, blank=True)  # e.g. ["current","savings","saversplus"]
+    dashboard_widgets = models.JSONField(default=list, blank=True)       # e.g. ["overview","transactions","accounts"]
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"UserProfile({self.user.username})"
+
 
 class Account(models.Model):
     ACCOUNT_TYPES = [
         ('current', 'Current'),
         ('savings', 'Savings'),
         ('savingsplus', 'Savings Plus'),
+        ('saversplus', 'Savers Plus'),
         ('credit', 'Credit'),
         ('other', 'Other'),
     ]
@@ -23,6 +50,10 @@ class Account(models.Model):
     # Add account type field
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default='current')
 
+    SAVINGS_INTEREST_RATE = Decimal('0.020')
+    # Savers Plus is 1 percentage point higher than Savings.
+    SAVERS_PLUS_INTEREST_RATE = Decimal('0.030')
+
     def __str__(self):
         return self.name
 
@@ -33,6 +64,16 @@ class Account(models.Model):
         outgoing = Transaction.objects.filter(from_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
         incoming = Transaction.objects.filter(to_account=self).aggregate(models.Sum('amount'))['amount__sum'] or 0
         return self.starting_balance + incoming + outgoing
+
+    def get_interest_rate(self):
+        """
+        Returns the nominal interest rate (as a decimal, e.g. 0.02 == 2%).
+        """
+        if self.account_type == 'saversplus':
+            return self.SAVERS_PLUS_INTEREST_RATE
+        if self.account_type in ('savings', 'savingsplus'):
+            return self.SAVINGS_INTEREST_RATE
+        return Decimal('0.000')
     
 class Card(models.Model):
     """

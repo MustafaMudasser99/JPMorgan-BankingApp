@@ -1,9 +1,20 @@
 {% extends 'banking/base.html' %}
 {% load static %}
+{% load account_tags %}
 
-{% block title %}Dashboard - Extra Credit Union{% endblock %}
+{% block title %}Dashboard - Crypto Knight Banking{% endblock %}
 
 {% block content %}
+    {% if has_savers_plus %}
+        <section class="ad-slot ad-slot-banner" aria-label="Advertisement">
+            <div class="ad-slot-inner">
+                <div class="ad-slot-label">Advertisement placeholder</div>
+                <div class="ad-slot-title">Your banner ad goes here</div>
+                <div class="ad-slot-meta">Size: 728×90 (example) · Savers Plus</div>
+            </div>
+        </section>
+    {% endif %}
+
     <div class="dashboard-grid">
         <div>
             <div class="section-heading">
@@ -49,65 +60,228 @@
             </div>
         </div>
 
-        <div class="card">
-            <h2>Recent Transactions</h2>
-            <div id="recent-transactions">
-                {% for transaction in recent_transactions %}
-                <div class="transaction-item">
-                    <div class="transaction-details">
-                        <h4>
-                            {% if transaction.business %}
-                                {{ transaction.business.name }}
-                            {% else %}
-                                {{ transaction.transaction_type|title }}
-                            {% endif %}
-                        </h4>
-                        <div class="transaction-meta">
-                            {{ transaction.timestamp|date:"M d, Y" }} • {{ transaction.transaction_type|title }}
+        {% if 'transactions' in oobe_dashboard_widgets %}
+            <div>
+                <div class="card">
+                    <h2>Recent Transactions</h2>
+                    <div id="recent-transactions">
+                        {% for transaction in recent_transactions %}
+                        <div class="transaction-item">
+                            <div class="transaction-details">
+                                <h4>
+                                    {% if transaction.business %}
+                                        {{ transaction.business.name }}
+                                    {% else %}
+                                        {{ transaction.transaction_type|title }}
+                                    {% endif %}
+                                </h4>
+                                <div class="transaction-meta">
+                                    {{ transaction.timestamp|date:"M d, Y" }} • {{ transaction.transaction_type|title }}
+                                </div>
+                            </div>
+                            <div class="transaction-amount {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}transaction-deposit{% else %}transaction-payment{% endif %}">
+                                {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}
+                                    +£{{ transaction.amount }}
+                                {% else %}
+                                    -£{{ transaction.amount }}
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="transaction-amount {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}transaction-deposit{% else %}transaction-payment{% endif %}">
-                        {% if transaction.transaction_type == 'deposit' or transaction.transaction_type == 'transfer' %}
-                            +£{{ transaction.amount }}
-                        {% else %}
-                            -£{{ transaction.amount }}
-                        {% endif %}
+                        {% empty %}
+                        <div class="loading">No recent transactions</div>
+                        {% endfor %}
                     </div>
                 </div>
-                {% empty %}
-                <div class="loading">No recent transactions</div>
-                {% endfor %}
             </div>
-        </div>
+        {% endif %}
     </div>
 
-    <div class="section-heading" id="accounts" style="margin-top: 16px;">
-        <div>
-            <h2>Your Accounts</h2>
+    {% if 'quick_transfer' in oobe_dashboard_widgets %}
+        <div class="section-heading" style="margin-top: 16px;">
+            <div>
+                <h2>Quick Transfer</h2>
+            </div>
         </div>
-    </div>
-    <div class="grid two">
-        {% for account in accounts %}
-            <article class="card">
-                <div class="card-head">
-                    <div>
-                        <p class="eyebrow">{{ account.get_account_type_display }} account</p>
-                        <h3>£{{ account.get_balance }}</h3>
-                        <p class="muted">{{ account.name }}</p>
+        <div class="card" style="margin-bottom: 12px;">
+            <p class="muted" style="margin-top:0;">
+                Go to the balance page to move money between your accounts or to external recipients.
+            </p>
+            <div class="cta-row">
+                <a class="primary" href="/banking/balance/">Open transfers</a>
+                <a class="secondary" href="/banking/balance/#transactions">View transactions</a>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if 'accounts' in oobe_dashboard_widgets %}
+        <div class="section-heading" id="accounts" style="margin-top: 16px;">
+            <div>
+                <h2>Your Accounts</h2>
+            </div>
+            <button type="button" class="secondary" id="open-savers-plus-dialog">Apply for Savers Plus</button>
+        </div>
+    {% endif %}
+
+    <dialog class="modal" id="savers-plus-dialog" aria-labelledby="savers-plus-title" style="position: fixed; top: 166px; left: 152px; width: 560px; max-height: calc(100vh - 210px); overflow: auto; scrollbar-width: none; -ms-overflow-style: none;">
+        <div class="modal-card" style="width: 100%; height: auto; overflow: visible;">
+            <div id="dialog-mode-saversplus">
+                <p class="eyebrow">New account type</p>
+                <h2 id="savers-plus-title" style="margin-top: 0;">Savers Plus</h2>
+                <p class="muted">
+                    Savers Plus offers a slightly higher interest rate than a standard savings account.
+                    In exchange, you’ll be shown tailored advertisements and offers in-app.
+                </p>
+                <ul class="modal-list">
+                    <li><strong>Higher interest</strong> than standard savings</li>
+                    <li><strong>Ads enabled</strong> to fund the higher rate</li>
+                    <li><strong>No fee</strong> to open</li>
+                </ul>
+
+                <form method="post" action="{% url 'apply-savers-plus' %}" class="cta-row" style="margin-top: 16px;">
+                    {% csrf_token %}
+                    <button type="submit" class="primary">Yes, open Savers Plus</button>
+                    <button type="button" class="secondary" id="close-savers-plus-dialog">No, thanks</button>
+                </form>
+            </div>
+
+            <div id="dialog-mode-oobe" style="display:none;">
+                <p class="eyebrow" id="prefs-eyebrow">Welcome</p>
+                <h2 id="oobe-title" style="margin-top: 0;">Your dashboard</h2>
+                <p class="muted">
+                    {% if show_oobe %}
+                        Choose the accounts you’d like to open and what you want to see on your dashboard.
+                        You can skip this once — it won’t show again.
+                    {% else %}
+                        Choose what you want to see on your dashboard.
+                    {% endif %}
+                </p>
+
+                <form method="post" action="{% url 'oobe-settings' %}" style="margin-top: 12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="settings_only" id="settings-only" value="0">
+
+                    {% if show_oobe %}
+                        <div id="prefs-accounts">
+                            <h3 style="margin-bottom: 8px;">Accounts</h3>
+                            <div class="modal-list checklist" style="margin-bottom: 12px;">
+                                <label class="check-row">
+                                    <input type="checkbox" checked disabled>
+                                    <span class="check-text">
+                                        <strong>Current account</strong>
+                                        <span class="muted">Mandatory and ready to use.</span>
+                                    </span>
+                                </label>
+
+                                <label class="check-row">
+                                    <input type="checkbox" name="open_savings" {% if 'savings' in oobe_selected_account_types %}checked{% endif %}>
+                                    <span class="check-text">
+                                        <strong>Savings account</strong>
+                                        <span class="muted">Earn {{ savings_interest_rate_percent }}% interest (nominal).</span>
+                                    </span>
+                                </label>
+
+                                <label class="check-row">
+                                    <input type="checkbox" name="open_saversplus" id="open-saversplus" {% if 'saversplus' in oobe_selected_account_types %}checked{% endif %}>
+                                    <span class="check-text">
+                                        <strong>Savers Plus</strong>
+                                        <span class="muted">Earn {{ savers_plus_interest_rate_percent }}% interest (nominal) with adverts enabled.</span>
+                                        <label class="check-row" style="margin-top: 8px;">
+                                            <input type="checkbox" name="accept_ads" id="accept-ads" {% if 'saversplus' in oobe_selected_account_types %}checked{% endif %}>
+                                            <span class="check-text muted">I agree to have an advert displayed to fund the higher interest rate.</span>
+                                        </label>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <h3 style="margin-bottom: 8px;">Dashboard windows</h3>
+                    <div class="modal-list checklist" style="margin-bottom: 12px;">
+                        <label class="check-row">
+                            <input type="checkbox" checked disabled>
+                            <span class="check-text"><strong>Account overview</strong> (mandatory)</span>
+                        </label>
+                        <label class="check-row">
+                            <input type="checkbox" name="widgets" value="transactions" {% if 'transactions' in oobe_dashboard_widgets %}checked{% endif %}>
+                            <span class="check-text">Transactions</span>
+                        </label>
+                        <label class="check-row">
+                            <input type="checkbox" name="widgets" value="accounts" {% if 'accounts' in oobe_dashboard_widgets %}checked{% endif %}>
+                            <span class="check-text">Accounts</span>
+                        </label>
+                        <label class="check-row">
+                            <input type="checkbox" name="widgets" value="quick_transfer" {% if 'quick_transfer' in oobe_dashboard_widgets %}checked{% endif %}>
+                            <span class="check-text">Quick Transfer menu</span>
+                        </label>
+                        <input type="hidden" name="widgets" value="overview">
                     </div>
-                    <span class="pill">{% if account.round_up_enabled %}Round-up{% else %}Standard{% endif %}</span>
-                </div>
-                <div class="cta-row">
-                    <a class="primary" href="/banking/balance/#transactions">View activity</a>
-                    <a class="secondary" href="/banking/balance/">See balances</a>
-                </div>
-            </article>
-        {% endfor %}
-    </div>
+
+                    <div class="cta-row" style="margin-top: 16px;">
+                        <button type="submit" name="action" value="save" class="primary">Save settings</button>
+                        {% if show_oobe %}
+                            <button type="submit" name="action" value="skip" class="secondary">Skip</button>
+                        {% endif %}
+                        <button type="button" class="secondary" id="close-oobe-dialog">Close</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </dialog>
+
+    {% if 'accounts' in oobe_dashboard_widgets %}
+        <div class="grid two">
+            {% for account in accounts %}
+                <article class="card card-{{ account.get_account_type_display|account_type_slug }}">
+                    <div class="card-head">
+                        <div>
+                            <p class="eyebrow">{{ account.get_account_type_display }} account</p>
+                            <h3>£{{ account.get_balance }}</h3>
+                            <p class="muted">{{ account.name }}</p>
+                        </div>
+                        <span class="pill">{% if account.round_up_enabled %}Round-up{% else %}Standard{% endif %}</span>
+                    </div>
+                    <div class="cta-row">
+                        <a class="primary" href="/banking/balance/#transactions">View activity</a>
+                        <a class="secondary" href="/banking/balance/">See balances</a>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block styles %}
 <link rel="stylesheet" href="{% static 'banking/css/dashboard.css' %}">
+<style>
+  /* Never show a scrollbar inside the dialog (still scrollable). */
+  #savers-plus-dialog::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* Uniform checkbox alignment inside the preferences dialog. */
+  #savers-plus-dialog .modal-list {
+    padding-left: 0;
+    list-style: none;
+  }
+  #savers-plus-dialog .checklist {
+    display: grid;
+    gap: 10px;
+  }
+  #savers-plus-dialog .check-row {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    gap: 10px;
+    align-items: start;
+    margin: 0;
+  }
+  #savers-plus-dialog .check-row input[type="checkbox"] {
+    margin-top: 2px;
+    width: 16px;
+    height: 16px;
+    justify-self: start;
+  }
+  #savers-plus-dialog .check-text {
+    line-height: 1.25;
+  }
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -115,6 +289,64 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const showOobe = {% if show_oobe %}true{% else %}false{% endif %};
+        const dialog = document.getElementById('savers-plus-dialog');
+        const openBtn = document.getElementById('open-savers-plus-dialog');
+        const closeBtn = document.getElementById('close-savers-plus-dialog');
+        const closeOobeBtn = document.getElementById('close-oobe-dialog');
+        const settingsOnly = document.getElementById('settings-only');
+
+        const modeSaversPlus = document.getElementById('dialog-mode-saversplus');
+        const modeOobe = document.getElementById('dialog-mode-oobe');
+
+        function setDialogMode(mode) {
+            if (!modeSaversPlus || !modeOobe) return;
+            const isPrefs = mode === 'oobe' || mode === 'settings';
+            modeSaversPlus.style.display = isPrefs ? 'none' : '';
+            modeOobe.style.display = isPrefs ? '' : 'none';
+            if (settingsOnly) settingsOnly.value = (mode === 'settings') ? '1' : '0';
+        }
+
+        function openDialog(mode) {
+            if (!dialog) return;
+            setDialogMode(mode);
+            if (typeof dialog.showModal === 'function') dialog.showModal();
+            else dialog.setAttribute('open', 'open');
+        }
+
+        // OOBE: enforce "accept ads" when Savers Plus is selected (inside OOBE form)
+        const openSaversPlus = document.getElementById('open-saversplus');
+        const acceptAds = document.getElementById('accept-ads');
+        if (openSaversPlus && acceptAds) {
+            const sync = () => { acceptAds.required = !!openSaversPlus.checked; };
+            openSaversPlus.addEventListener('change', sync);
+            sync();
+        }
+
+        if (dialog && openBtn) {
+            openBtn.addEventListener('click', () => {
+                openDialog('saversplus');
+            });
+        }
+
+        if (dialog && closeBtn) {
+            closeBtn.addEventListener('click', () => dialog.close());
+        }
+        if (dialog && closeOobeBtn) {
+            closeOobeBtn.addEventListener('click', () => dialog.close());
+        }
+
+        if (dialog) {
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) dialog.close();
+            });
+        }
+
+        // Auto-open in OOBE mode if needed, or if user clicked the settings cog.
+        const params = new URLSearchParams(window.location.search);
+        if (showOobe || params.get('settings') === '1') {
+            openDialog(showOobe ? 'oobe' : 'settings');
+        }
     });
 </script>
 {% endblock %}
