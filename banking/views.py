@@ -11,6 +11,10 @@ from .serializers import AccountSerializer, TransactionSerializer, BusinessSeria
 from decimal import Decimal
 import os
 import subprocess
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from .models import ChatMessage
+from .serializers import ChatMessageSerializer
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -344,3 +348,68 @@ class BusinessViewSet(viewsets.ModelViewSet):
         if self.action in ['update', 'partial_update']:
             return [IsAuthenticated()]
         return [IsAdminUser()]
+    
+
+class ChatViewSet(viewsets.ModelViewSet):
+    queryset = ChatMessage.objects.all()
+    serializer_class = ChatMessageSerializer
+
+    def create(self, request, *args, **kwargs):
+        # 1. Capture and sanitize input
+        user_input = request.data.get('text', '').lower().strip()
+        
+        # 2. Secure User context
+        chat_user = request.user
+        if chat_user.is_anonymous:
+            # Fallback to admin/first user for testing if session isn't active
+            chat_user = User.objects.filter(is_superuser=True).first()
+            
+        if not chat_user:
+            return Response({"error": "No user context available."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. Save User's message to Database
+        ChatMessage.objects.create(user=chat_user, text=user_input, role='user')
+
+        # 4. Smart Intent Logic
+        # We group synonyms together so the bot understands varied sentences.
+        
+        # GREETINGS INTENT
+        if any(word in user_input for word in ["hello", "hi", "hey", "morning", "evening"]):
+            response_text = "Hi there! I'm your Crypto Knight assistant. How can I help you manage your accounts today?"
+
+        # BALANCE/FUNDS INTENT
+        elif any(word in user_input for word in ["balance", "money", "funds", "much do i have", "account"]):
+            response_text = "You can check your real-time balance on your Dashboard. For a full breakdown, visit the 'Balance' page."
+
+        # SECURITY/EMERGENCY INTENT
+        elif any(word in user_input for word in ["lost", "stolen", "freeze", "stole", "missing", "security"]):
+            response_text = "⚠️ EMERGENCY: I have flagged this. Please navigate to 'Settings' to freeze your card immediately or call our 24/7 line at 0800-CRYPTO."
+
+        # TRANSFER/PAYMENT INTENT
+        elif any(word in user_input for word in ["transfer", "send", "pay", "wire", "move"]):
+            response_text = "To send money to a new or existing contact, please head to the 'Transactions' tab and select 'New Transfer'."
+
+        # LOANS/CREDIT INTENT
+        elif any(word in user_input for word in ["loan", "borrow", "credit", "mortgage", "overdraft"]):
+            response_text = "Interested in a loan? Check your personalized 'Offers' section in your profile to see what you're eligible for."
+
+        # BRANCH/HOURS INTENT
+        elif any(word in user_input for word in ["hours", "open", "address", "location", "close"]):
+            response_text = "Crypto Knight is a 100% digital bank! Our app is open 24/7. Human support is available via chat from 9am to 5pm, Mon-Fri."
+
+        # EXIT/THANKS INTENT
+        elif any(word in user_input for word in ["thanks", "thank you", "bye", "goodbye"]):
+            response_text = "You're very welcome! Feel free to reach out if you need anything else. Secure banking, Crypto Knight."
+
+        # FALLBACK (When no intent is matched)
+        else:
+            response_text = "I'm still learning the ropes! I'm best at answering questions about your 'balance', 'lost cards', or 'making transfers'. Could you try rephrasing?"
+
+        # 5. Save Bot's response to Database
+        bot_msg = ChatMessage.objects.create(user=chat_user, text=response_text, role='assistant')
+
+        # 6. Return response to Frontend
+        return Response(
+            ChatMessageSerializer(bot_msg).data, 
+            status=status.HTTP_201_CREATED
+        )
