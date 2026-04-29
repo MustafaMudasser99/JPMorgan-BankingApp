@@ -79,79 +79,73 @@
 
     {% block scripts %}
     <script>
-        // Existing Authentication state management
-        function getAuthToken() {
-            return localStorage.getItem('access_token');
-        }
-
-        function getUserData() {
-            const userData = localStorage.getItem('user_data');
-            return userData ? JSON.parse(userData) : null;
-        }
-
-        function logout() {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user_data');
-            window.location.href = '/banking/login/';
-        }
-
-        // NEW: Security Polling Logic
         let activeTransactionId = null;
 
         function checkForPendingPayments() {
-            // Don't poll if user isn't logged in or modal is already visible
-            if (!getAuthToken() && "{{ request.user.is_authenticated }}" === "False") return;
-            if (document.getElementById('security-modal').style.display === 'flex') return;
+            const modal = document.getElementById('security-modal');
+            if (modal.style.display === 'flex') return;
 
-            fetch('/api/transactions/check_pending/')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.has_pending) {
-                        activeTransactionId = data.id;
-                        document.getElementById('modal-amount').innerText = "£" + data.amount;
-                        document.getElementById('security-modal').style.display = 'flex';
-                    }
-                })
-                .catch(err => console.debug("Polling..."));
+            fetch('/api/transactions/check_pending/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // LOG 1: See what the server actually sent back
+                console.log("Polling Response:", data);
+
+                if (data && data.has_pending) {
+                    console.log("Match Found! ID:", data.id);
+                    activeTransactionId = data.id;
+                    
+                    // Update text
+                    const amountEl = document.getElementById('modal-amount');
+                    if (amountEl) amountEl.innerText = "£" + data.amount;
+                    
+                    // Show modal
+                    modal.style.display = 'flex';
+                    console.log("Modal display set to flex.");
+                }
+            })
+            .catch(err => console.error("Fetch Error:", err));
         }
 
         function respondToPayment(action) {
             if (!activeTransactionId) return;
 
-            fetch(`/api/transactions/${activeTransactionId}/finalize_auth/`, {
+            // Ensure no double slashes in the URL
+            const url = `/api/transactions/${activeTransactionId}/finalize_auth/`;
+            console.log("Sending response to:", url);
+
+            fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Authorization': 'Bearer ' + getAuthToken()
+                    'X-CSRFToken': '{{ csrf_token }}'
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ action: action })
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
+                console.log("Action confirmed:", data);
                 document.getElementById('security-modal').style.display = 'none';
-                activeTransactionId = null;
-                // Refresh to show updated balance
                 window.location.reload();
             })
-            .catch(err => {
-                alert("Authorization error. The request may have expired.");
-                document.getElementById('security-modal').style.display = 'none';
-            });
+            .catch(err => console.error("Finalize Error:", err));
         }
 
-        // Initialize Polling
+        // 1-second interval for testing
         if ("{{ request.user.is_authenticated }}" === "True") {
-            setInterval(checkForPendingPayments, 10000); // Check every 10 seconds
+            setInterval(checkForPendingPayments, 1000);
         }
 
         document.getElementById('btn-approve').onclick = () => respondToPayment('approve');
         document.getElementById('btn-deny').onclick = () => respondToPayment('deny');
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof setAuthState === 'function') setAuthState();
-        });
     </script>
     {% endblock %}
 </body>

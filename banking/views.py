@@ -20,14 +20,16 @@ from datetime import timedelta
 from .models import Account, Transaction
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 
 def is_security_window_active():
-    now_time = timezone.localtime(timezone.now()).time()
+    return True
+    # now_time = timezone.localtime(timezone.now()).time()
     
-    start_time = time(0, 0, 0)
-    end_time = time(6, 0, 0)
+    # start_time = time(0, 0, 0)
+    # end_time = time(6, 0, 0)
     
-    return start_time <= now_time <= end_time
+    # return start_time <= now_time <= end_time
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -231,6 +233,8 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class TransactionViewSet(viewsets.ModelViewSet):
+    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     serializer_class = TransactionSerializer
     
     def get_queryset(self):

@@ -50,6 +50,6 @@ urlpatterns = [
 
     # User Approval endpoints (ViewSet Actions)
     path('api/transactions/check_pending/', TransactionViewSet.as_view({'get': 'check_pending'}), name='check-pending'),
-    path('api/transactions/<uuid:pk>/finalize_auth/', TransactionViewSet.as_view({'post': 'finalize_auth'}), name='finalize-auth'),
-    path('api/v1/provider/status/<uuid:transaction_id>/', check_payment_status, name='merchant_check_status'),
+    path('api/transactions/<int:pk>/finalize_auth/', TransactionViewSet.as_view({'post': 'finalize_auth'}), name='finalize-auth'),
+    path('api/v1/provider/status/<int:transaction_id>/', check_payment_status, name='merchant_check_status'),
 ]

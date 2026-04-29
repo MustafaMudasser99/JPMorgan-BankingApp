@@ -133,6 +133,12 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.transaction_type} - {self.amount}"
     
+    
+    def is_expired(self):
+        if self.status == 'pending' and self.expires_at:
+            return timezone.now() > self.expires_at
+        return False
+    
     def save(self, *args, **kwargs):
         is_new = self.pk is None
 
