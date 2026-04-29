@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Account, Transaction, Business, Card
 from django.contrib.auth.models import User
+from .models import ChatMessage
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,3 +41,8 @@ class BusinessSerializer(serializers.ModelSerializer):
     class Meta:
         model = Business
         fields = ['id', 'name', 'category', 'sanctioned']
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'text', 'role', 'created_at']
