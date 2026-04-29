@@ -1,0 +1,8 @@
+.toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--color-border); transition: 0.4s; border-radius: 34px; }
+.toggle-slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: 0.4s; border-radius: 50%; }
+input:checked + .toggle-slider { background: linear-gradient(135deg, var(--color-primary), var(--color-secondary)); }
+input:checked + .toggle-slider:before { transform: translateX(26px); }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(4, 16, 21, 0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 2000; }

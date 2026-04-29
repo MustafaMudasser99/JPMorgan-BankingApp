@@ -38,6 +38,7 @@
             <a class="tab {% if request.path == '/banking/dashboard/' %}active{% endif %}" href="/banking/dashboard/">Dashboard</a>
             <a class="tab {% if request.path == '/banking/balance/' %}active{% endif %}" href="/banking/balance/#transactions">Transactions</a>
             <a class="tab {% if request.path == '/banking/balance/' %}active{% endif %}" href="/banking/balance/">Balance</a>
+            <a class="tab {% if request.path == '/banking/savings/' %}active{% endif %}" href="/banking/savings/">Savings</a>
             {% if request.user.is_authenticated and request.user.is_staff %}
                 <a class="tab {% if request.path == '/banking/users/' %}active{% endif %}" href="/banking/users/">Users</a>
             {% endif %}
@@ -57,6 +58,20 @@
         {% endblock %}
     </main>
 
+    <div id="security-modal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); align-items: center; justify-content: center; font-family: 'Manrope', sans-serif;">
+        <div style="background-color: white; padding: 40px; border-radius: 24px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🛡️</div>
+            <h2 style="margin: 0; color: #1a1a1a;">Authorize Payment</h2>
+            <p style="color: #666; margin-top: 10px;">An online provider is requesting:</p>
+            <h1 id="modal-amount" style="margin: 20px 0; color: #1a1a1a; font-size: 2.5rem;">£0.00</h1>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 25px;">
+                <button id="btn-approve" style="background-color: #1a1a1a; color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem;">Yes, it's me</button>
+                <button id="btn-deny" style="background-color: transparent; color: #dc3545; border: 1px solid #dc3545; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem;">No, decline this</button>
+            </div>
+            <p style="font-size: 0.75rem; color: #999; margin-top: 20px;">For your security, this request expires in 5 minutes.</p>
+        </div>
+    </div>
+
     <footer class="footer">
         <span>Crypto Knight · Secure UK digital banking</span>
         <a class="ghost" href="/banking/dashboard/">Back to dashboard</a>
@@ -66,26 +81,73 @@
 
     {% block scripts %}
     <script>
-        // Authentication state management
-        function getAuthToken() {
-            return localStorage.getItem('access_token');
+        let activeTransactionId = null;
+
+        function checkForPendingPayments() {
+            const modal = document.getElementById('security-modal');
+            if (modal.style.display === 'flex') return;
+
+            fetch('/api/transactions/check_pending/', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                // LOG 1: See what the server actually sent back
+                console.log("Polling Response:", data);
+
+                if (data && data.has_pending) {
+                    console.log("Match Found! ID:", data.id);
+                    activeTransactionId = data.id;
+                    
+                    // Update text
+                    const amountEl = document.getElementById('modal-amount');
+                    if (amountEl) amountEl.innerText = "£" + data.amount;
+                    
+                    // Show modal
+                    modal.style.display = 'flex';
+                    console.log("Modal display set to flex.");
+                }
+            })
+            .catch(err => console.error("Fetch Error:", err));
         }
 
-        function getUserData() {
-            const userData = localStorage.getItem('user_data');
-            return userData ? JSON.parse(userData) : null;
+        function respondToPayment(action) {
+            if (!activeTransactionId) return;
+
+            // Ensure no double slashes in the URL
+            const url = `/api/transactions/${activeTransactionId}/finalize_auth/`;
+            console.log("Sending response to:", url);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: action })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log("Action confirmed:", data);
+                document.getElementById('security-modal').style.display = 'none';
+                window.location.reload();
+            })
+            .catch(err => console.error("Finalize Error:", err));
         }
 
-        function logout() {
-            // Clear tokens from localStorage
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('user_data');
-            
-            // Redirect to login page
-            window.location.href = '/banking/login/';
+        // 1-second interval for testing
+        if ("{{ request.user.is_authenticated }}" === "True") {
+            setInterval(checkForPendingPayments, 1000);
         }
-        document.addEventListener('DOMContentLoaded', setAuthState);
+
+        document.getElementById('btn-approve').onclick = () => respondToPayment('approve');
+        document.getElementById('btn-deny').onclick = () => respondToPayment('deny');
     </script>
     {% endblock %}
 </body>

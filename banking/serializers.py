@@ -34,7 +34,8 @@ class AccountSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
-        fields = ['id', 'transaction_type', 'amount', 'from_account', 'to_account', 'business', 'timestamp']
+        fields = ['id', 'transaction_type', 'amount', 'from_account', 'to_account', 'business', 'timestamp', 'status', 'expires_at']
+        read_only_fields = ['id', 'timestamp', 'status', 'expires_at']
 
 class BusinessSerializer(serializers.ModelSerializer):
     class Meta:

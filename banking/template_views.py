@@ -9,9 +9,14 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from django.views.decorators.http import require_http_methods
+from .models import Account, Transaction, SavingsTracker
+from decimal import Decimal, InvalidOperation
+import json
 from django.views.decorators.http import require_POST
-from .models import Account, Transaction, UserProfile
-from decimal import Decimal
+from .models import Account, Transaction, UserProfile, SavingsTracker
 
 @login_required(login_url='login')
 def apply_savers_plus(request):
@@ -218,6 +223,102 @@ class DashboardView(View):
         }
         return render(request, 'banking/dashboard.html', context)
 
+@method_decorator(login_required, name='dispatch')
+class SavingsView(View):
+    template_name = 'banking/savings.html'
+
+    def get(self, request, *args, **kwargs):
+        savings_account, _ = Account.objects.get_or_create(
+            user=request.user,
+            account_type='savings',
+            defaults={
+                'name': 'My Savings Account',
+                'starting_balance': Decimal('0.00'),
+            }
+        )
+
+        savings_tracker = SavingsTracker.objects.filter(account=savings_account).first()
+
+        return render(request, self.template_name, {
+            'savings_tracker': savings_tracker
+        })
+
+
+@require_http_methods(["POST"])
+@csrf_exempt
+@login_required
+def update_savings_api(request):
+    try:
+        data = json.loads(request.body or "{}")
+
+        savings_account, _ = Account.objects.get_or_create(
+            user=request.user,
+            account_type='savings',
+            defaults={
+                'name': 'My Savings Account',
+                'starting_balance': Decimal('0.00'),
+            }
+        )
+
+        if data.get('savings_enabled') is False:
+            deleted_count, _ = SavingsTracker.objects.filter(account=savings_account).delete()
+            return JsonResponse({
+                'success': True,
+                'message': 'Savings tracker deleted successfully.',
+                'deleted_count': deleted_count,
+                'savings_enabled': False,
+                'savings_goal': '0.00',
+                'progress_percentage': 0
+            })
+
+        if data.get('savings_enabled') is True:
+            if 'savings_goal' not in data:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Savings goal is required when enabling savings.'
+                }, status=400)
+
+            try:
+                savings_goal = Decimal(str(data['savings_goal']))
+                if savings_goal <= 0:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Savings goal must be greater than 0.'
+                    }, status=400)
+            except Exception:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid savings goal amount.'
+                }, status=400)
+
+            savings_tracker, created = SavingsTracker.objects.update_or_create(
+                account=savings_account,
+                defaults={
+                    'savings_enabled': True,
+                    'savings_goal': savings_goal,
+                }
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Savings settings updated successfully.',
+                'created': created,
+                'savings_enabled': savings_tracker.savings_enabled,
+                'current_amount': str(savings_tracker.current_amount),
+                'savings_goal': str(savings_tracker.savings_goal),
+                'progress_percentage': float(savings_tracker.progress_percentage()),
+            })
+
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request.'
+        }, status=400)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 # API-style functions that don't require REST framework
 def register_api(request):
     """
@@ -417,7 +518,7 @@ class BalanceView(View):
                     # Create transaction
                     Transaction.objects.create(
                         transaction_type="transfer",
-                        amount=-amount,
+                        amount=amount,
                         from_account=from_account,
                         to_account=to_account
                     )
@@ -462,7 +563,7 @@ class BalanceView(View):
                     # Create transaction
                     Transaction.objects.create(
                         transaction_type="payment",
-                        amount=-amount,
+                        amount=amount,
                         from_account=from_account,
                         to_account=None
                     )

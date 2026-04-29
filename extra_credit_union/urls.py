@@ -6,9 +6,9 @@ from django.urls import path, include
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from banking.auth_views import LoginView, UserAccountsView
-from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView, apply_savers_plus, oobe_settings, UserManagementView, delete_user
+from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView, SavingsView, update_savings_api, apply_savers_plus, oobe_settings, UserManagementView, delete_user
 from banking.login_views import LoginView as WebLoginView, logout_view, api_login
-
+from banking.views import merchant_payment_request, TransactionViewSet, check_payment_status
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,10 +34,22 @@ urlpatterns = [
     path('banking/login/', WebLoginView.as_view(), name='login'),
     path('banking/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('banking/balance/', BalanceView.as_view(), name='balance-web'),
+    path('banking/savings/', SavingsView.as_view(), name='savings'),
     path('banking/apply-savers-plus/', apply_savers_plus, name='apply-savers-plus'),
     path('banking/oobe/', oobe_settings, name='oobe-settings'),
     path('banking/users/', UserManagementView.as_view(), name='user-management'),
     path('banking/users/<int:user_id>/delete/', delete_user, name='delete-user'),
     path('banking/logout/', logout_view, name='logout'),
     path('banking/api-login/', api_login, name='api-login-web'),
+    
+    # Savings API endpoint
+    path('banking/api/savings/update/', update_savings_api, name='update-savings-api'),
+    path('api/v1/provider/pay/', merchant_payment_request, name='merchant_pay'),
+    # Merchant/Provider endpoint (Standalone Function)
+    path('api/v1/provider/pay/', merchant_payment_request, name='merchant_pay'),
+
+    # User Approval endpoints (ViewSet Actions)
+    path('api/transactions/check_pending/', TransactionViewSet.as_view({'get': 'check_pending'}), name='check-pending'),
+    path('api/transactions/<int:pk>/finalize_auth/', TransactionViewSet.as_view({'post': 'finalize_auth'}), name='finalize-auth'),
+    path('api/v1/provider/status/<int:transaction_id>/', check_payment_status, name='merchant_check_status'),
 ]
