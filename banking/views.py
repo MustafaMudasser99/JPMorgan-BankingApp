@@ -11,7 +11,6 @@ from .serializers import AccountSerializer, TransactionSerializer, BusinessSeria
 from decimal import Decimal
 import os
 import subprocess
-<<<<<<< HEAD
 from django.utils import timezone
 from datetime import time
 import json
@@ -416,8 +415,6 @@ class BusinessViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAdminUser()]
     
-
-<<<<<<< HEAD
 @csrf_exempt
 def merchant_payment_request(request):
     if request.method != 'POST':
