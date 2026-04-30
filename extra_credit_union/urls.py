@@ -6,7 +6,7 @@ from django.urls import path, include
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from banking.auth_views import LoginView, UserAccountsView
-from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView, SavingsView, update_savings_api, apply_savers_plus, oobe_settings, UserManagementView, delete_user
+from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView, SavingsView, update_savings_api, apply_savers_plus, oobe_settings, UserManagementView, delete_user, toggle_roundup, toggle_night_savings
 from banking.login_views import LoginView as WebLoginView, logout_view, api_login
 from banking.views import merchant_payment_request, TransactionViewSet, check_payment_status
 
@@ -52,4 +52,6 @@ urlpatterns = [
     path('api/transactions/check_pending/', TransactionViewSet.as_view({'get': 'check_pending'}), name='check-pending'),
     path('api/transactions/<int:pk>/finalize_auth/', TransactionViewSet.as_view({'post': 'finalize_auth'}), name='finalize-auth'),
     path('api/v1/provider/status/<int:transaction_id>/', check_payment_status, name='merchant_check_status'),
+    path('api/account/toggle-roundup/', toggle_roundup, name='toggle-roundup'),
+    path('api/account/toggle-night-savings/', toggle_night_savings, name='toggle-night-savings'),
 ]
