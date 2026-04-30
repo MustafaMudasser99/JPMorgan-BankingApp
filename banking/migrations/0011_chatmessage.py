@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('banking', '0008_userprofile_and_account_choices'),
+        ('banking', '0010_transaction_expires_at_transaction_status'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
