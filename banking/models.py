@@ -52,6 +52,7 @@ class Account(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accounts', null=True, blank=True)
     # Add account type field
     account_type = models.CharField(max_length=20, choices=ACCOUNT_TYPES, default='current')
+    night_time_savings_enabled = models.BooleanField(default=False)
 
     SAVINGS_INTEREST_RATE = Decimal('0.020')
     # Savers Plus is 1 percentage point higher than Savings.

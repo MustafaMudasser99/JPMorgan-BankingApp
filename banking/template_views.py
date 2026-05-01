@@ -239,8 +239,11 @@ class SavingsView(View):
 
         savings_tracker = SavingsTracker.objects.filter(account=savings_account).first()
 
+        user_accounts = Account.objects.filter(user=request.user)
+
         return render(request, self.template_name, {
-            'savings_tracker': savings_tracker
+            'savings_tracker': savings_tracker,
+            'user_accounts': user_accounts
         })
 
 
@@ -721,3 +724,31 @@ def delete_user(request, user_id: int):
     user.delete()
     messages.success(request, f'User "{username}" deleted.')
     return redirect('user-management')
+
+@login_required
+@require_POST
+def toggle_roundup(request):
+    try:
+        data = json.loads(request.body)
+        account = Account.objects.get(id=data.get('account_id'), user=request.user)
+        account.round_up_enabled = data.get('enabled')
+        account.save()
+        return JsonResponse({'success': True})
+    except Account.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Account not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@login_required
+@require_POST
+def toggle_night_savings(request):
+    try:
+        data = json.loads(request.body)
+        account = Account.objects.get(id=data.get('account_id'), user=request.user)
+        account.night_time_savings_enabled = data.get('enabled')
+        account.save()
+        return JsonResponse({'success': True})
+    except Account.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Account not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)

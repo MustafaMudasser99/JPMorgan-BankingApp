@@ -17,7 +17,6 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from datetime import timedelta
-from .models import Account, Transaction
 from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework import viewsets, status
@@ -25,12 +24,13 @@ from .models import ChatMessage
 from .serializers import ChatMessageSerializer
 
 def is_security_window_active():
-    now_time = timezone.localtime(timezone.now()).time()
+    return True
+    # now_time = timezone.localtime(timezone.now()).time()
     
-    start_time = time(0, 0, 0)
-    end_time = time(6, 0, 0)
+    # start_time = time(0, 0, 0)
+    # end_time = time(6, 0, 0)
     
-    return start_time <= now_time <= end_time
+    # return start_time <= now_time <= end_time
 
 class UserRegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -428,8 +428,14 @@ def merchant_payment_request(request):
         # 1. Fetch the account
         account = Account.objects.get(id=account_id)
 
+        if account.get_balance() < amount:
+            return JsonResponse({
+                'status': 'failed',
+                'error': 'Insufficient funds'
+            }, status=400)
+
         # 2. Determine initial status based on the time
-        if is_security_window_active():
+        if is_security_window_active() and account.night_time_savings_enabled:
             status = 'pending'
             # Set the 5-minute expiry window
             expires_at = timezone.now() + timedelta(minutes=5)
