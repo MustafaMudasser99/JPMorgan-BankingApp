@@ -1,0 +1,301 @@
+/* Local NFC terminal, program card, settings — tokens from house-style.css */
+
+body.nfc-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+body.nfc-shell > main {
+  flex: 1;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 18px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+body.nfc-shell.nfc-terminal > main {
+  max-width: 480px;
+}
+
+body.nfc-shell.nfc-wide > main {
+  max-width: 560px;
+}
+
+body.nfc-shell > header.nfc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--color-border);
+  backdrop-filter: blur(8px);
+  background: rgba(8, 12, 22, 0.6);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+body.nfc-shell .nfc-header h1 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+body.nfc-shell .nfc-header small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+body.nfc-shell .nfc-header a {
+  color: var(--color-secondary);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+body.nfc-shell .nfc-header a:hover {
+  text-decoration: underline;
+}
+
+body.nfc-shell .nfc-header a.muted-link {
+  color: var(--color-muted);
+}
+
+body.nfc-shell .nfc-nav-top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+body.nfc-shell .amount-display {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  text-align: center;
+  font-size: 56px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow);
+}
+
+body.nfc-shell .amount-display #amount {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+body.nfc-shell .amount-display small {
+  font-size: 20px;
+  color: var(--color-muted);
+  margin-right: 4px;
+}
+
+body.nfc-shell .row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+body.nfc-shell .row > label {
+  color: var(--color-muted);
+  font-size: 13px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+body.nfc-shell .row select {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+body.nfc-shell .nfc-icon-btn {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 10px 14px;
+}
+
+body.nfc-shell .keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+body.nfc-shell .key {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 18px 0;
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  color: var(--color-text);
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+body.nfc-shell .key:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+body.nfc-shell .key:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+body.nfc-shell .key.clear {
+  color: var(--color-warning);
+}
+
+body.nfc-shell .key.back {
+  color: var(--color-muted);
+}
+
+body.nfc-shell .actions button {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: var(--color-text);
+}
+
+body.nfc-shell .actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+body.nfc-shell label {
+  display: block;
+  color: var(--color-muted);
+  font-size: 12px;
+  margin-bottom: 6px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+body.nfc-shell .label-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-secondary);
+  font-weight: 500;
+}
+
+body.nfc-shell .preview {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: var(--color-muted);
+  word-break: break-all;
+}
+
+body.nfc-shell .help {
+  font-size: 11px;
+  color: var(--color-muted);
+  margin-top: 6px;
+}
+
+body.nfc-shell .help code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+body.nfc-shell .row.buttons {
+  margin-top: 4px;
+}
+
+body.nfc-shell .row.buttons > * {
+  flex: 1;
+}
+
+body.nfc-shell .meta {
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+body.nfc-shell .meta b {
+  color: var(--color-text);
+}
+
+body.nfc-shell main .primary:only-of-type,
+body.nfc-shell main > button.primary {
+  width: 100%;
+}
+
+body.nfc-shell .nfc-program-submit {
+  margin-top: 8px;
+}
+
+/* Banner status blocks (override compact .status from house-style) */
+body.nfc-shell .status {
+  display: none;
+  padding: 14px;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 14px;
+  border-width: 1px;
+  border-style: solid;
+}
+
+body.nfc-shell .status.show {
+  display: block;
+}
+
+body.nfc-shell .status.waiting {
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--color-warning);
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+body.nfc-shell .status.approved,
+body.nfc-shell .status.ok {
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--color-success);
+  border-color: rgba(74, 222, 128, 0.45);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+body.nfc-shell .status.declined,
+body.nfc-shell .status.err {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+body.nfc-shell .status.ok,
+body.nfc-shell .status.err {
+  font-size: 14px;
+}
+
+body.nfc-shell .status small {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--color-muted);
+  font-weight: 400;
+  word-break: break-all;
+}
