@@ -1,6 +1,7 @@
 """
 Template-based registration view that doesn't rely on REST framework.
 """
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views import View
@@ -11,12 +12,11 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
-from django.views.decorators.http import require_http_methods
-from .models import Account, Transaction, SavingsTracker
+from django.views.decorators.http import require_POST, require_http_methods
+from .models import Account, Transaction, SavingsTracker, UserProfile
 from decimal import Decimal, InvalidOperation
 import json
-from django.views.decorators.http import require_POST
-from .models import Account, Transaction, UserProfile, SavingsTracker
+from .payment_cards_client import PaymentCardsAPIError, fetch_card_public, fetch_cards_me
 
 @login_required(login_url='login')
 def apply_savers_plus(request):
@@ -752,3 +752,60 @@ def toggle_night_savings(request):
         return JsonResponse({'success': False, 'error': 'Account not found'}, status=404)
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@method_decorator(login_required(login_url='login'), name='dispatch')
+class BankFinancesView(View):
+    """
+    Staff-only: bank budget and payment cards from the external payment system.
+    """
+    template_name = 'banking/bank_finances.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_staff:
+            messages.error(request, 'You do not have permission to view bank finances.')
+            return redirect('dashboard')
+
+        finances = None
+        finances_error = None
+        try:
+            finances = fetch_cards_me()
+        except PaymentCardsAPIError as e:
+            finances_error = str(e)
+        except Exception as e:
+            finances_error = f'Unexpected error: {e}'
+
+        return render(
+            request,
+            self.template_name,
+            {
+                'finances': finances,
+                'finances_error': finances_error,
+                'payment_bank_id': getattr(settings, 'PAYMENT_CARDS_BANK_ID', ''),
+            },
+        )
+
+
+@login_required(login_url='login')
+@require_http_methods(['GET'])
+def bank_finances_summary_json(request):
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    try:
+        return JsonResponse(fetch_cards_me())
+    except PaymentCardsAPIError as e:
+        status = e.status_code if e.status_code and 400 <= e.status_code <= 599 else 502
+        return JsonResponse({'error': str(e)}, status=status)
+
+
+@login_required(login_url='login')
+@require_http_methods(['GET'])
+def bank_finances_card_json(request, card_number: str):
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    bank_id = getattr(settings, 'PAYMENT_CARDS_BANK_ID', '') or ''
+    try:
+        return JsonResponse(fetch_card_public(bank_id, card_number))
+    except PaymentCardsAPIError as e:
+        status = e.status_code if e.status_code and 400 <= e.status_code <= 599 else 502
+        return JsonResponse({'error': str(e)}, status=status)
