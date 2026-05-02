@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Local NFC Terminal · Crypto Knight</title>
+  <style>
+    :root { --bg:#0b1020; --card:#141a30; --accent:#5eead4; --muted:#94a3b8; --good:#22c55e; --bad:#ef4444; --warn:#fbbf24; --text:#e5e7eb; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; }
+    header { padding:12px 20px; background:#0f1630; border-bottom:1px solid #1f2747; display:flex; align-items:center; justify-content:space-between; }
+    header h1 { margin:0; font-size:14px; letter-spacing:.5px; font-weight:500; }
+    header small { color:var(--muted); font-size:11px; }
+    main { padding:20px; max-width:480px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+    .amount-display { background:#0f1630; border:2px solid #1f2747; border-radius:12px; padding:24px; text-align:center; font-size:56px; font-weight:300; font-variant-numeric:tabular-nums; color:var(--accent); }
+    .amount-display small { font-size:20px; color:var(--muted); margin-right:4px; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .row label { color:var(--muted); font-size:13px; white-space:nowrap; }
+    select, input, button { font:inherit; border-radius:8px; border:1px solid #1f2747; background:var(--card); color:var(--text); padding:10px 12px; }
+    select { flex:1 1 auto; }
+    .keypad { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+    .key { background:var(--card); border:1px solid #1f2747; border-radius:10px; padding:18px 0; font-size:22px; font-weight:500; text-align:center; cursor:pointer; user-select:none; }
+    .key:active { background:#1f2747; }
+    .key.clear { color:var(--warn); }
+    .key.back  { color:var(--muted); }
+    .actions button { width:100%; padding:16px; font-size:16px; font-weight:600; background:var(--accent); color:#0b1020; border:none; cursor:pointer; border-radius:8px; }
+    .actions button:disabled { opacity:.5; cursor:not-allowed; }
+    .status { padding:14px; border-radius:12px; text-align:center; font-size:14px; display:none; }
+    .status.show { display:block; }
+    .status.waiting  { background:#1f1a0e; color:var(--warn); border:1px solid var(--warn); }
+    .status.approved { background:#0a2b2a; color:var(--good); border:1px solid var(--good); font-size:18px; font-weight:600; }
+    .status.declined { background:#2b0a0a; color:var(--bad); border:1px solid var(--bad); font-size:18px; font-weight:600; }
+    .status small { display:block; margin-top:4px; font-size:11px; color:var(--muted); font-weight:400; }
+    .nav-top a { color:var(--accent); font-size:12px; text-decoration:none; margin-right:12px; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Local NFC Terminal</h1>
+  <div class="nav-top" style="display:flex;gap:12px;align-items:center">
+    <a href="{% url 'nfc_terminal:program' %}">Program card →</a>
+    <a href="{% url 'nfc_terminal:config' %}">Settings →</a>
+    <a href="/banking/dashboard/" style="color:var(--muted)">Dashboard</a>
+    <small id="cfg">Crypto Knight</small>
+  </div>
+</header>
+<main>
+  {% csrf_token %}
+  <div class="amount-display"><small>£</small><span id="amount">0.00</span></div>
+  <div class="row">
+    <label for="reader">Reader:</label>
+    <select id="reader" onchange="setReader()"><option>(loading...)</option></select>
+    <button type="button" onclick="loadReaders()" title="Refresh reader list" style="padding:8px 12px">⟳</button>
+  </div>
+  <div class="row">
+    <label for="from_account">Debit in app:</label>
+    <select id="from_account" {% if not accounts %}disabled{% endif %}>
+      {% for a in accounts %}
+      <option value="{{ a.id }}">{{ a.name }} · {{ a.get_account_type_display }}</option>
+      {% empty %}
+      <option value="">No accounts — open Balance and add one</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="row">
+    <label for="merchant">Credit to:</label>
+    <select id="merchant">
+      <option>Team1</option><option>Team2</option><option>Team3</option><option>Team4</option>
+      <option>Team5</option><option>Team6</option><option>Team7</option><option selected>TestTeam</option>
+    </select>
+  </div>
+  <div class="keypad">
+    <div class="key" data-key="1">1</div><div class="key" data-key="2">2</div><div class="key" data-key="3">3</div>
+    <div class="key" data-key="4">4</div><div class="key" data-key="5">5</div><div class="key" data-key="6">6</div>
+    <div class="key" data-key="7">7</div><div class="key" data-key="8">8</div><div class="key" data-key="9">9</div>
+    <div class="key clear" data-key="C">CLR</div><div class="key" data-key="0">0</div><div class="key back" data-key="B">⌫</div>
+  </div>
+  <div class="actions"><button type="button" id="tap" onclick="charge()">Tap card</button></div>
+  <div id="status" class="status"></div>
+</main>
+<script>
+const NFC = {
+  readers: "{% url 'nfc_terminal:readers' %}",
+  reader: "{% url 'nfc_terminal:reader' %}",
+  charge: "{% url 'nfc_terminal:charge' %}",
+};
+function jsonHeaders() {
+  const el = document.querySelector('[name=csrfmiddlewaretoken]');
+  const token = el ? el.value : '';
+  return {
+    'Content-Type': 'application/json',
+    'X-CSRFToken': token,
+  };
+}
+const $ = id => document.getElementById(id);
+let amount = 0;
+function render(){ $('amount').textContent = (amount/100).toFixed(2); }
+document.querySelectorAll('.key').forEach(k => k.addEventListener('click', () => {
+  const v = k.dataset.key;
+  if (v === 'C') amount = 0;
+  else if (v === 'B') amount = Math.floor(amount/10);
+  else amount = Math.min(amount*10 + parseInt(v,10), 99999999);
+  render();
+  setStatus('','');
+}));
+function setStatus(kind, html){ const s = $('status'); s.className = 'status' + (kind ? ' show '+kind : ''); s.innerHTML = html; }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function loadReaders(){
+  const sel = $('reader');
+  try {
+    const r = await fetch(NFC.readers, { credentials: 'same-origin' });
+    const body = await r.json();
+    const rs = body.readers || [];
+    sel.innerHTML = '';
+    if (!rs.length){
+      const opt = document.createElement('option');
+      opt.textContent = '(no readers detected)';
+      opt.disabled = true;
+      sel.appendChild(opt);
+      return;
+    }
+    rs.forEach((name, i) => {
+      const opt = document.createElement('option');
+      opt.value = String(i);
+      opt.textContent = i + ': ' + name;
+      if (i === body.selected) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    sel.innerHTML = '<option disabled>error: ' + escapeHtml(e.message) + '</option>';
+  }
+}
+
+async function setReader(){
+  const idx = parseInt($('reader').value, 10);
+  if (!Number.isFinite(idx)) return;
+  try {
+    const r = await fetch(NFC.reader, { method:'POST', headers: jsonHeaders(), credentials: 'same-origin', body: JSON.stringify({index: idx}) });
+    if (!r.ok) {
+      const b = await r.json().catch(()=>({}));
+      alert('Failed: ' + (b.error || r.status));
+    }
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function charge(){
+  const amt = amount/100;
+  if (amt <= 0){ alert('Enter an amount first.'); return; }
+  const fromAccount = $('from_account').value;
+  if (!fromAccount){ alert('Select the account to debit in this app.'); return; }
+  const merchant = $('merchant').value;
+  $('tap').disabled = true;
+  setStatus('waiting', 'Tap a card on the reader…<br><small>£'+amt.toFixed(2)+' → '+merchant+'</small>');
+  try {
+    const r = await fetch(NFC.charge, { method:'POST', headers: jsonHeaders(), credentials: 'same-origin', body: JSON.stringify({amount: amt, merchant_id: merchant, from_account: fromAccount})});
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const res = body.result || {};
+      const detail = body.error || res.error || res.message || res.hint || (typeof res === 'string' ? res : '');
+      setStatus('declined', 'Error ' + r.status + '<br><small>' + escapeHtml(detail || JSON.stringify(res).slice(0, 200)) + '</small>');
+      return;
+    }
+    const result = body.result || {};
+    if (result.status === 'authorized') {
+      const ledger = body.local_transaction_id ? ' · app tx ' + String(body.local_transaction_id).slice(0, 8) : '';
+      setStatus('approved', 'APPROVED · £' + amt.toFixed(2) + '<br><small>auth ' + (result.authorization_code || '—') + ' · network ' + (result.transaction_id || '').slice(0,8) + ledger + '</small>');
+      amount = 0; render();
+    } else if (result.status === 'pending') {
+      setStatus('waiting', 'Authorization pending — student bank not responding<br><small>tx ' + (result.transaction_id || '').slice(0,8) + '</small>');
+    } else {
+      const code = result.response_code ? ' (code ' + result.response_code + ')' : '';
+      setStatus('declined', 'Declined' + code + '<br><small>' + escapeHtml(result.message || result.error || '') + '</small>');
+    }
+  } catch (e) {
+    setStatus('declined', 'Local error<br><small>' + escapeHtml(e.message) + '</small>');
+  } finally {
+    $('tap').disabled = false;
+  }
+}
+render();
+loadReaders();
+</script>
+</body>
+</html>

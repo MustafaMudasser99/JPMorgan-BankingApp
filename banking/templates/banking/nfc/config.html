@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NFC terminal settings · Crypto Knight</title>
+  <style>
+    :root { --bg:#0b1020; --card:#141a30; --accent:#5eead4; --muted:#94a3b8; --good:#22c55e; --bad:#ef4444; --warn:#fbbf24; --text:#e5e7eb; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; }
+    header { padding:12px 20px; background:#0f1630; border-bottom:1px solid #1f2747; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    header h1 { margin:0; font-size:14px; letter-spacing:.5px; font-weight:500; }
+    header a { color:var(--accent); font-size:12px; text-decoration:none; }
+    main { padding:20px; max-width:560px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+    label { display:block; color:var(--muted); font-size:12px; margin-bottom:4px; letter-spacing:.3px; text-transform:uppercase; }
+    input, button { font:inherit; border-radius:8px; border:1px solid #1f2747; background:var(--card); color:var(--text); padding:10px 12px; width:100%; }
+    input.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    .row { display:flex; gap:8px; }
+    .row > * { flex:1; }
+    button.primary { background:var(--accent); color:#0b1020; border:none; cursor:pointer; padding:14px; font-weight:600; font-size:15px; }
+    button.ghost { background:var(--card); color:var(--muted); border:1px solid #1f2747; cursor:pointer; padding:14px; }
+    .help { font-size:11px; color:var(--muted); margin-top:4px; }
+    .help code { background:#0f1630; padding:1px 5px; border-radius:3px; }
+    .status { padding:14px; border-radius:12px; text-align:center; font-size:14px; display:none; }
+    .status.show { display:block; }
+    .status.ok  { background:#0a2b2a; color:var(--good); border:1px solid var(--good); font-weight:600; }
+    .status.err { background:#2b0a0a; color:var(--bad);  border:1px solid var(--bad);  font-weight:600; }
+    .meta { background:#0f1630; border:1px solid #1f2747; border-radius:8px; padding:12px; font-size:12px; color:var(--muted); }
+    .meta b { color:var(--text); }
+  </style>
+</head>
+<body>
+<header>
+  <a href="{% url 'nfc_terminal:terminal' %}">← Terminal</a>
+  <h1>Settings</h1>
+  <a href="/banking/dashboard/" style="color:var(--muted);font-size:12px">Dashboard</a>
+</header>
+<main>
+  {% csrf_token %}
+  <div>
+    <label for="acquirer">Acquirer API key (X-API-Key for /api/authorize)</label>
+    <input id="acquirer" class="mono" type="text" placeholder="sk_..." autocomplete="off" spellcheck="false">
+    <div class="help">The terminal sends this on every charge. If empty, <code>PAYMENT_CARDS_API_KEY</code> from Django settings is used. Saved to <code id="path"></code>.</div>
+  </div>
+  <div class="row">
+    <button type="button" class="primary" id="save" onclick="save()">Save</button>
+    <button type="button" class="ghost" onclick="clearKey()">Clear</button>
+  </div>
+  <div id="status" class="status"></div>
+  <div class="meta" id="meta">loading…</div>
+</main>
+<script>
+const NFC = {
+  state: "{% url 'nfc_terminal:config_state' %}",
+  save: "{% url 'nfc_terminal:config_save' %}",
+};
+function jsonHeaders() {
+  const el = document.querySelector('[name=csrfmiddlewaretoken]');
+  return {
+    'Content-Type': 'application/json',
+    'X-CSRFToken': el ? el.value : '',
+  };
+}
+const $ = id => document.getElementById(id);
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function setStatus(kind, html){ const s = $('status'); s.className = 'status' + (kind ? ' show '+kind : ''); s.innerHTML = html; }
+
+async function load(){
+  try {
+    const r = await fetch(NFC.state, { credentials: 'same-origin' });
+    const s = await r.json();
+    $('acquirer').value = s.acquirer_api_key || '';
+    $('path').textContent = s.config_path;
+    const src = s.source === 'config' ? 'saved in config' : (s.source === 'env' ? 'from ACQUIRER_API_KEY env var' : (s.source === 'django_settings' ? 'from Django PAYMENT_CARDS_API_KEY' : 'unset'));
+    $('meta').innerHTML =
+      '<b>Network:</b> ' + escapeHtml(s.payment_network_url) + '<br>' +
+      '<b>Authorize:</b> ' + escapeHtml(s.authorize_url) + '<br>' +
+      '<b>Register card:</b> ' + escapeHtml(s.register_card_url) + '<br>' +
+      '<b>Current key source:</b> ' + escapeHtml(src);
+  } catch (e) { setStatus('err', escapeHtml(e.message)); }
+}
+
+async function save(){
+  const key = $('acquirer').value.trim();
+  $('save').disabled = true;
+  try {
+    const r = await fetch(NFC.save, {
+      method: 'POST',
+      headers: jsonHeaders(),
+      credentials: 'same-origin',
+      body: JSON.stringify({ acquirer_api_key: key })
+    });
+    const body = await r.json();
+    if (!r.ok) { setStatus('err', escapeHtml(body.error || r.status)); return; }
+    setStatus('ok', 'Saved.');
+    load();
+  } catch (e) { setStatus('err', escapeHtml(e.message)); }
+  finally { $('save').disabled = false; }
+}
+
+async function clearKey(){
+  $('acquirer').value = '';
+  await save();
+}
+
+load();
+</script>
+</body>
+</html>

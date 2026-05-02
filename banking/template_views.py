@@ -13,6 +13,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST, require_http_methods
+from django.db.models import Q
 from .models import Account, Transaction, SavingsTracker, UserProfile
 from decimal import Decimal, InvalidOperation
 import json
@@ -204,9 +205,14 @@ class DashboardView(View):
                 profile.save(update_fields=['oobe_completed', 'selected_account_types', 'dashboard_widgets', 'updated_at'])
 
         total_balance = sum(account.starting_balance for account in accounts)
-        recent_transactions = Transaction.objects.filter(
-            from_account__in=accounts
-        ).select_related('business').order_by('-timestamp')[:10]
+        recent_transactions = (
+            Transaction.objects.filter(
+                Q(from_account__in=accounts) | Q(to_account__in=accounts)
+            )
+            .distinct()
+            .select_related("business")
+            .order_by("-timestamp")[:10]
+        )
         total_savings = sum(account.round_up_pot for account in accounts)
 
         context = {
