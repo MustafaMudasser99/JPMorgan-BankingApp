@@ -30,6 +30,23 @@ PAYMENT_CARDS_BANK_ID = os.environ.get(
     "29329eb1-4fc0-4db4-bd92-debdb81f81c6",
 )
 
+# v2 payment network root (same lab as bu_banking_terminal local-terminal.py).
+_explicit_network = os.environ.get("PAYMENT_NETWORK_URL", "").strip().rstrip("/")
+_api_base = PAYMENT_CARDS_API_BASE.rstrip("/")
+if _explicit_network:
+    PAYMENT_NETWORK_URL = _explicit_network
+elif _api_base.endswith("/api"):
+    PAYMENT_NETWORK_URL = _api_base[:-4].rstrip("/")
+else:
+    PAYMENT_NETWORK_URL = _api_base
+
+# NFC POS terminal (PC/SC on the machine running Django).
+NFC_TERMINAL_CONFIG_PATH = os.environ.get(
+    "NFC_TERMINAL_CONFIG_PATH",
+    str(Path.home() / ".team7-banking-terminal" / "config.json"),
+)
+NFC_TERMINAL_TAP_TIMEOUT = float(os.environ.get("TAP_TIMEOUT", "30"))
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/

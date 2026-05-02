@@ -63,6 +63,7 @@ urlpatterns = [
     
     # Savings API endpoint
     path('banking/api/savings/update/', update_savings_api, name='update-savings-api'),
+    path('banking/nfc/', include('banking.nfc_terminal.urls')),
     path('api/v1/provider/pay/', merchant_payment_request, name='merchant_pay'),
     # Merchant/Provider endpoint (Standalone Function)
     path('api/v1/provider/pay/', merchant_payment_request, name='merchant_pay'),

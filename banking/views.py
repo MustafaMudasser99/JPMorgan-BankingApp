@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.decorators import action
 from django.db import models
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.contrib.auth.models import User
 from .models import Account, Transaction, Business
 from .serializers import AccountSerializer, TransactionSerializer, BusinessSerializer
@@ -239,17 +239,29 @@ class TransactionViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     
     def get_queryset(self):
-        # Return transactions for accounts owned by the user
+        # Incoming + outgoing for the user's accounts (so transfers and NFC-linked payments show up)
         if self.request.user.is_authenticated:
             if self.request.user.is_staff:
-                return Transaction.objects.all()
+                return Transaction.objects.all().order_by("-timestamp")
             user_accounts = Account.objects.filter(user=self.request.user)
-            return Transaction.objects.filter(from_account__in=user_accounts)
+            return (
+                Transaction.objects.filter(
+                    Q(from_account__in=user_accounts) | Q(to_account__in=user_accounts)
+                )
+                .distinct()
+                .order_by("-timestamp")
+            )
         return Transaction.objects.none()
-    
+
     def get_permissions(self):
         # For read actions, require authentication
-        if self.action in ['list', 'retrieve', 'account_transactions', 'spending_summary']:
+        if self.action in [
+            "list",
+            "retrieve",
+            "account_transactions",
+            "spending_summary",
+            "payment_network",
+        ]:
             return [IsAuthenticated()]
         # For write actions, also require authentication
         return [IsAuthenticated()]
@@ -306,22 +318,44 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def account_transactions(self, request, account_id=None):
         # View all transactions related to a specific account
         try:
-            account = Account.objects.get(id=account_id)  
-                
+            account = Account.objects.get(id=account_id)
+            if account.user != request.user and not request.user.is_staff:
+                return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
-            transactions = Transaction.objects.filter(from_account=account)
+            transactions = Transaction.objects.filter(
+                Q(from_account=account) | Q(to_account=account)
+            ).order_by("-timestamp")
             serializer = self.get_serializer(transactions, many=True)
             return Response(serializer.data)
         except Account.DoesNotExist:
             return Response({"detail": "Account not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=["get"], url_path="payment-network")
+    def payment_network(self, request):
+        """
+        List all transactions from the external payment-system API (GET /api/transactions).
+        """
+        from .payment_cards_client import PaymentCardsAPIError, fetch_bank_transactions
+
+        try:
+            rows = fetch_bank_transactions()
+        except PaymentCardsAPIError as e:
+            code = (
+                e.status_code
+                if e.status_code is not None and 400 <= e.status_code < 600
+                else status.HTTP_502_BAD_GATEWAY
+            )
+            return Response({"error": str(e)}, status=code)
+        return Response({"count": len(rows), "transactions": rows})
 
     @action(detail=False, methods=['get'], url_path='spending-summary/(?P<account_id>[^/.]+)')
     def spending_summary(self, request, account_id=None):
         # Summarize spending by category for a given account
         try:
             account = Account.objects.get(id=account_id)
-                
-                
+            if account.user != request.user and not request.user.is_staff:
+                return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
             # Summarize spending by business category
             spending_summary = Transaction.objects.filter(
                 from_account=account,
