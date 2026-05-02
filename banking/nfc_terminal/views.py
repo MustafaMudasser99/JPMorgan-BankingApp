@@ -19,7 +19,7 @@ from django.views.decorators.http import require_GET, require_http_methods
 from banking.models import Account, Business, Transaction
 
 from . import nfc_ops, network_client, state
-from .config_store import config_path, current_acquirer_api_key, load_config, save_config
+from .config_store import config_path_display, current_acquirer_api_key, load_config, save_config
 
 
 def _json_body(request) -> dict[str, Any] | None:
@@ -54,7 +54,11 @@ def program_page(request):
 @login_required
 @require_GET
 def config_page(request):
-    return render(request, "banking/nfc/config.html")
+    return render(
+        request,
+        "banking/nfc/config.html",
+        {"initial_acquirer_api_key": _effective_acquirer_key()},
+    )
 
 
 @login_required
@@ -168,7 +172,7 @@ def config_state(request):
             "payment_network_url": network_client.payment_network_url(),
             "authorize_url": network_client.authorize_url(),
             "register_card_url": network_client.register_card_url(),
-            "config_path": config_path(),
+            "config_path": config_path_display(),
         }
     )
 
