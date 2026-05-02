@@ -1,0 +1,185 @@
+{% extends "banking/base.html" %}
+{% load static %}
+
+{% block title %}Bank finances · Crypto Knight{% endblock %}
+
+{% block content %}
+<section>
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Payment system</p>
+            <h1 style="margin: 0;">Bank finances</h1>
+            <p class="muted" style="margin-top: 8px; max-width: 640px;">
+                Budget and card balances from the linked payment system. Figures refresh automatically every 25 seconds while this page is open.
+            </p>
+        </div>
+        <div class="cta-row" style="flex-wrap: wrap;">
+            <button type="button" class="secondary" id="finances-refresh">Refresh now</button>
+            <a class="ghost" href="/banking/dashboard/">Dashboard</a>
+        </div>
+    </div>
+
+    <p id="finances-banner" class="muted" style="margin-top: 0; font-size: 13px;" aria-live="polite">
+        <span id="finances-updated">{% if finances and not finances_error %}Loaded from payment system{% elif finances_error %}Could not load{% endif %}</span>
+    </p>
+
+    {% if finances_error and not finances %}
+    <div class="card" style="padding: 18px; border-color: rgba(239, 68, 68, 0.35);">
+        <h2 style="margin-top: 0; color: #fecaca;">Unable to load finances</h2>
+        <p class="muted">{{ finances_error }}</p>
+    </div>
+    {% endif %}
+
+    <div id="finances-error-inline" class="card" style="display: none; padding: 16px; border-color: rgba(239, 68, 68, 0.35); margin-bottom: 16px;">
+        <p style="margin: 0; color: #fecaca;" id="finances-error-text"></p>
+    </div>
+
+    <div id="finances-body" {% if not finances or finances_error %}style="display: none;"{% endif %}>
+        <div class="grid stats" style="margin-bottom: 20px;">
+            <article class="card stat">
+                <div class="stat-top">
+                    <div>
+                        <p class="eyebrow">Bank</p>
+                        <h3 id="ff-bank-name" style="font-size: 1.1rem;">{% if finances %}{{ finances.bank_name }}{% endif %}</h3>
+                    </div>
+                </div>
+                <p class="muted" style="font-size: 12px; word-break: break-all;">ID: <span id="ff-bank-id">{% if finances %}{{ finances.bank_id }}{% endif %}</span></p>
+            </article>
+            <article class="card stat">
+                <div class="stat-top">
+                    <div>
+                        <p class="eyebrow">Total budget</p>
+                        <h3 id="ff-total-budget">{% if finances %}£{{ finances.total_budget }}{% endif %}</h3>
+                    </div>
+                </div>
+                <p class="muted">Issued: <span id="ff-issued">{% if finances %}£{{ finances.issued }}{% endif %}</span></p>
+            </article>
+            <article class="card stat">
+                <div class="stat-top">
+                    <div>
+                        <p class="eyebrow">Remaining to issue</p>
+                        <h3 id="ff-remaining">{% if finances %}£{{ finances.remaining_to_issue }}{% endif %}</h3>
+                    </div>
+                </div>
+                <p class="muted">Headroom on new cards</p>
+            </article>
+            <article class="card stat">
+                <div class="stat-top">
+                    <div>
+                        <p class="eyebrow">Current spendable</p>
+                        <h3 id="ff-spendable">{% if finances %}£{{ finances.current_spendable }}{% endif %}</h3>
+                    </div>
+                </div>
+                <p class="muted">Sum of live card balances</p>
+            </article>
+        </div>
+
+        <div class="card table-card" style="margin-top: 8px;">
+            <div class="table-row head finances-card-grid">
+                <span>Card number</span>
+                <span>Starting balance</span>
+                <span>Current balance</span>
+            </div>
+            <div id="ff-cards-rows">
+                {% if finances and finances.cards %}
+                    {% for c in finances.cards %}
+                    <div class="table-row finances-card-grid">
+                        <span style="font-variant-numeric: tabular-nums;">{{ c.card_number }}</span>
+                        <span>£{{ c.starting_balance }}</span>
+                        <span>£{{ c.balance }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <p class="muted" style="margin-top: 16px; font-size: 13px;">
+            Single-card API (proxied, staff only): <code style="font-size: 12px;">/banking/api/finances/card/&lt;card_number&gt;/</code>
+            · Configured <code style="font-size: 12px;">bank_id</code>: {{ payment_bank_id }}
+        </p>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<style>
+    .finances-card-grid {
+        grid-template-columns: 1.4fr 1fr 1fr !important;
+    }
+</style>
+<script>
+(function () {
+    const summaryUrl = "{% url 'bank-finances-summary' %}";
+    const fmtMoney = (v) => {
+        if (v === null || v === undefined) return "—";
+        const n = Number(v);
+        if (Number.isNaN(n)) return String(v);
+        return "£" + n;
+    };
+
+    function applyPayload(data) {
+        const errBox = document.getElementById("finances-error-inline");
+        const errText = document.getElementById("finances-error-text");
+        const body = document.getElementById("finances-body");
+        const banner = document.getElementById("finances-updated");
+
+        if (data.error) {
+            errBox.style.display = "block";
+            errText.textContent = data.error;
+            if (banner) banner.textContent = "Last update failed";
+            return;
+        }
+        errBox.style.display = "none";
+
+        const set = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+        set("ff-bank-name", data.bank_name || "—");
+        set("ff-bank-id", data.bank_id || "—");
+        set("ff-total-budget", fmtMoney(data.total_budget));
+        set("ff-issued", fmtMoney(data.issued));
+        set("ff-remaining", fmtMoney(data.remaining_to_issue));
+        set("ff-spendable", fmtMoney(data.current_spendable));
+
+        const rows = document.getElementById("ff-cards-rows");
+        if (rows && Array.isArray(data.cards)) {
+            rows.replaceChildren();
+            data.cards.forEach((c) => {
+                const row = document.createElement("div");
+                row.className = "table-row finances-card-grid";
+                const n = document.createElement("span");
+                n.style.fontVariantNumeric = "tabular-nums";
+                n.textContent = c.card_number != null ? String(c.card_number) : "—";
+                const sb = document.createElement("span");
+                sb.textContent = fmtMoney(c.starting_balance);
+                const bal = document.createElement("span");
+                bal.textContent = fmtMoney(c.balance);
+                row.appendChild(n);
+                row.appendChild(sb);
+                row.appendChild(bal);
+                rows.appendChild(row);
+            });
+        }
+        body.style.display = "";
+        const t = new Date();
+        if (banner) banner.textContent = "Updated " + t.toLocaleTimeString();
+    }
+
+    function loadSummary() {
+        fetch(summaryUrl, { credentials: "same-origin" })
+            .then((r) => r.json().then((j) => ({ ok: r.ok, j })))
+            .then(({ ok, j }) => {
+                if (!ok && j && j.error) applyPayload({ error: j.error });
+                else if (!ok) applyPayload({ error: "Request failed (" + (j && j.detail ? j.detail : "unknown") + ")" });
+                else applyPayload(j);
+            })
+            .catch((e) => applyPayload({ error: String(e) }));
+    }
+
+    document.getElementById("finances-refresh")?.addEventListener("click", loadSummary);
+    setInterval(loadSummary, 25000);
+})();
+</script>
+{% endblock %}

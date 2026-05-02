@@ -40,6 +40,7 @@
             <a class="tab {% if request.path == '/banking/balance/' %}active{% endif %}" href="/banking/balance/">Balance</a>
             <a class="tab {% if request.path == '/banking/savings/' %}active{% endif %}" href="/banking/savings/">Savings</a>
             {% if request.user.is_authenticated and request.user.is_staff %}
+                <a class="tab {% if request.path == '/banking/finances/' %}active{% endif %}" href="/banking/finances/">Bank finances</a>
                 <a class="tab {% if request.path == '/banking/users/' %}active{% endif %}" href="/banking/users/">Users</a>
             {% endif %}
         </nav>

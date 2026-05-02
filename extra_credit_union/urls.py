@@ -6,7 +6,23 @@ from django.urls import path, include
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from banking.auth_views import LoginView, UserAccountsView
-from banking.template_views import register_api, TemplateRegistrationView, DashboardView, BalanceView, SavingsView, update_savings_api, apply_savers_plus, oobe_settings, UserManagementView, delete_user, toggle_roundup, toggle_night_savings
+from banking.template_views import (
+    register_api,
+    TemplateRegistrationView,
+    DashboardView,
+    BalanceView,
+    SavingsView,
+    update_savings_api,
+    apply_savers_plus,
+    oobe_settings,
+    UserManagementView,
+    delete_user,
+    toggle_roundup,
+    toggle_night_savings,
+    BankFinancesView,
+    bank_finances_summary_json,
+    bank_finances_card_json,
+)
 from banking.login_views import LoginView as WebLoginView, logout_view, api_login
 from banking.views import merchant_payment_request, TransactionViewSet, check_payment_status
 
@@ -38,6 +54,9 @@ urlpatterns = [
     path('banking/apply-savers-plus/', apply_savers_plus, name='apply-savers-plus'),
     path('banking/oobe/', oobe_settings, name='oobe-settings'),
     path('banking/users/', UserManagementView.as_view(), name='user-management'),
+    path('banking/finances/', BankFinancesView.as_view(), name='bank-finances'),
+    path('banking/api/finances/summary/', bank_finances_summary_json, name='bank-finances-summary'),
+    path('banking/api/finances/card/<str:card_number>/', bank_finances_card_json, name='bank-finances-card'),
     path('banking/users/<int:user_id>/delete/', delete_user, name='delete-user'),
     path('banking/logout/', logout_view, name='logout'),
     path('banking/api-login/', api_login, name='api-login-web'),

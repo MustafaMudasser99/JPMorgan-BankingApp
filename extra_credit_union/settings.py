@@ -10,10 +10,25 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# External payment-system cards API (override via environment in production).
+PAYMENT_CARDS_API_BASE = os.environ.get(
+    "PAYMENT_CARDS_API_BASE",
+    "https://paymentsystem-cards-cf.pages.dev/api",
+)
+PAYMENT_CARDS_API_KEY = os.environ.get(
+    "PAYMENT_CARDS_API_KEY",
+    "h7INkNaeayCMbrCnhHdRssp9POCNLKcm",
+)
+PAYMENT_CARDS_BANK_ID = os.environ.get(
+    "PAYMENT_CARDS_BANK_ID",
+    "29329eb1-4fc0-4db4-bd92-debdb81f81c6",
+)
 
 
 # Quick-start development settings - unsuitable for production
