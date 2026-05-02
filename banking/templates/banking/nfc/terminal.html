@@ -1,46 +1,23 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Local NFC Terminal · Crypto Knight</title>
-  <style>
-    :root { --bg:#0b1020; --card:#141a30; --accent:#5eead4; --muted:#94a3b8; --good:#22c55e; --bad:#ef4444; --warn:#fbbf24; --text:#e5e7eb; }
-    * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; }
-    header { padding:12px 20px; background:#0f1630; border-bottom:1px solid #1f2747; display:flex; align-items:center; justify-content:space-between; }
-    header h1 { margin:0; font-size:14px; letter-spacing:.5px; font-weight:500; }
-    header small { color:var(--muted); font-size:11px; }
-    main { padding:20px; max-width:480px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
-    .amount-display { background:#0f1630; border:2px solid #1f2747; border-radius:12px; padding:24px; text-align:center; font-size:56px; font-weight:300; font-variant-numeric:tabular-nums; color:var(--accent); }
-    .amount-display small { font-size:20px; color:var(--muted); margin-right:4px; }
-    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .row label { color:var(--muted); font-size:13px; white-space:nowrap; }
-    select, input, button { font:inherit; border-radius:8px; border:1px solid #1f2747; background:var(--card); color:var(--text); padding:10px 12px; }
-    select { flex:1 1 auto; }
-    .keypad { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
-    .key { background:var(--card); border:1px solid #1f2747; border-radius:10px; padding:18px 0; font-size:22px; font-weight:500; text-align:center; cursor:pointer; user-select:none; }
-    .key:active { background:#1f2747; }
-    .key.clear { color:var(--warn); }
-    .key.back  { color:var(--muted); }
-    .actions button { width:100%; padding:16px; font-size:16px; font-weight:600; background:var(--accent); color:#0b1020; border:none; cursor:pointer; border-radius:8px; }
-    .actions button:disabled { opacity:.5; cursor:not-allowed; }
-    .status { padding:14px; border-radius:12px; text-align:center; font-size:14px; display:none; }
-    .status.show { display:block; }
-    .status.waiting  { background:#1f1a0e; color:var(--warn); border:1px solid var(--warn); }
-    .status.approved { background:#0a2b2a; color:var(--good); border:1px solid var(--good); font-size:18px; font-weight:600; }
-    .status.declined { background:#2b0a0a; color:var(--bad); border:1px solid var(--bad); font-size:18px; font-weight:600; }
-    .status small { display:block; margin-top:4px; font-size:11px; color:var(--muted); font-weight:400; }
-    .nav-top a { color:var(--accent); font-size:12px; text-decoration:none; margin-right:12px; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'banking/css/house-style.css' %}">
+  <link rel="stylesheet" href="{% static 'banking/css/nfc-terminal.css' %}">
 </head>
-<body>
-<header>
+<body class="nfc-shell nfc-terminal">
+<header class="nfc-header">
   <h1>Local NFC Terminal</h1>
-  <div class="nav-top" style="display:flex;gap:12px;align-items:center">
+  <div class="nfc-nav-top">
     <a href="{% url 'nfc_terminal:program' %}">Program card →</a>
     <a href="{% url 'nfc_terminal:config' %}">Settings →</a>
-    <a href="/banking/dashboard/" style="color:var(--muted)">Dashboard</a>
+    <a href="/banking/dashboard/" class="muted-link">Dashboard</a>
     <small id="cfg">Crypto Knight</small>
   </div>
 </header>
@@ -50,7 +27,7 @@
   <div class="row">
     <label for="reader">Reader:</label>
     <select id="reader" onchange="setReader()"><option>(loading...)</option></select>
-    <button type="button" onclick="loadReaders()" title="Refresh reader list" style="padding:8px 12px">⟳</button>
+    <button type="button" class="secondary nfc-icon-btn" onclick="loadReaders()" title="Refresh reader list">⟳</button>
   </div>
   <div class="row">
     <label for="from_account">Debit in app:</label>
