@@ -5,12 +5,14 @@ from __future__ import annotations
 import json
 import os
 import re
+from functools import wraps
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db import transaction as db_transaction
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -19,7 +21,20 @@ from django.views.decorators.http import require_GET, require_http_methods
 from banking.models import Account, Business, Transaction
 
 from . import nfc_ops, network_client, state
-from .config_store import config_path, current_acquirer_api_key, load_config, save_config
+from .config_store import config_path_display, current_acquirer_api_key, load_config, save_config
+
+
+def nfc_poc_required(view_func):
+    """Limit NFC POC routes to staff or superusers (use after @login_required)."""
+
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        u = request.user
+        if not (getattr(u, "is_staff", False) or getattr(u, "is_superuser", False)):
+            raise PermissionDenied
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped
 
 
 def _json_body(request) -> dict[str, Any] | None:
@@ -35,6 +50,7 @@ def _effective_acquirer_key() -> str:
 
 
 @login_required
+@nfc_poc_required
 @require_GET
 def terminal_page(request):
     accounts = Account.objects.filter(user=request.user).order_by("name")
@@ -44,6 +60,7 @@ def terminal_page(request):
 
 
 @login_required
+@nfc_poc_required
 @require_GET
 def program_page(request):
     if not nfc_ops.PYSCARD_AVAILABLE:
@@ -52,12 +69,18 @@ def program_page(request):
 
 
 @login_required
+@nfc_poc_required
 @require_GET
 def config_page(request):
-    return render(request, "banking/nfc/config.html")
+    return render(
+        request,
+        "banking/nfc/config.html",
+        {"initial_acquirer_api_key": _effective_acquirer_key()},
+    )
 
 
 @login_required
+@nfc_poc_required
 @require_GET
 def readers_list(request):
     rs = [str(r) for r in nfc_ops.list_readers_safe()]
@@ -66,6 +89,7 @@ def readers_list(request):
 
 
 @login_required
+@nfc_poc_required
 @require_http_methods(["POST"])
 def select_reader(request):
     body = _json_body(request)
@@ -83,6 +107,7 @@ def select_reader(request):
 
 
 @login_required
+@nfc_poc_required
 @require_http_methods(["POST"])
 def charge(request):
     body = _json_body(request)
@@ -146,6 +171,7 @@ def charge(request):
 
 
 @login_required
+@nfc_poc_required
 @require_GET
 def config_state(request):
     cfg = load_config()
@@ -168,12 +194,13 @@ def config_state(request):
             "payment_network_url": network_client.payment_network_url(),
             "authorize_url": network_client.authorize_url(),
             "register_card_url": network_client.register_card_url(),
-            "config_path": config_path(),
+            "config_path": config_path_display(),
         }
     )
 
 
 @login_required
+@nfc_poc_required
 @require_http_methods(["POST"])
 def config_save(request):
     body = _json_body(request)
@@ -193,6 +220,7 @@ def config_save(request):
 
 
 @login_required
+@nfc_poc_required
 @require_GET
 def program_state(request):
     cfg = load_config()
@@ -206,6 +234,7 @@ def program_state(request):
 
 
 @login_required
+@nfc_poc_required
 @require_http_methods(["POST"])
 def program_card(request):
     body = _json_body(request)

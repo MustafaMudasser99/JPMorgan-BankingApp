@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 from django.conf import settings
@@ -15,6 +16,19 @@ def config_path() -> str:
         "NFC_TERMINAL_CONFIG_PATH",
         os.path.expanduser("~/.team7-banking-terminal/config.json"),
     )
+
+
+def config_path_display() -> str:
+    """Where the terminal saves settings, without embedding the real OS username."""
+    resolved = Path(config_path()).expanduser().resolve()
+    home = Path.home().resolve()
+    try:
+        tail = resolved.relative_to(home)
+    except ValueError:
+        return str(resolved)
+    if os.name == "nt":
+        return str(Path(r"C:\Users\USERNAME") / tail)
+    return str(Path("~") / tail)
 
 
 def load_config() -> dict[str, Any]:

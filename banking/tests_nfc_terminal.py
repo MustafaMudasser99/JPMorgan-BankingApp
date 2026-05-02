@@ -14,9 +14,19 @@ class NfcTerminalRoutesTest(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("/banking/login/", r["Location"])
 
-    def test_authenticated_terminal_ok(self):
+    def test_authenticated_non_staff_forbidden(self):
         c = Client()
         c.force_login(self.user)
+        r = c.get("/banking/nfc/")
+        self.assertEqual(r.status_code, 403)
+
+    def test_staff_terminal_ok(self):
+        User = get_user_model()
+        staff = User.objects.create_user(
+            username="nfc_staff", password="test-pass-123", is_staff=True
+        )
+        c = Client()
+        c.force_login(staff)
         r = c.get("/banking/nfc/")
         self.assertEqual(r.status_code, 200)
         text = r.content.decode().lower()

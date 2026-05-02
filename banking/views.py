@@ -19,6 +19,7 @@ from django.views.decorators.csrf import csrf_exempt
 from datetime import timedelta
 from rest_framework.response import Response
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework import viewsets, status
 from .models import ChatMessage
 from .serializers import ChatMessageSerializer
@@ -234,7 +235,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [JWTAuthentication, SessionAuthentication, TokenAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = TransactionSerializer
     

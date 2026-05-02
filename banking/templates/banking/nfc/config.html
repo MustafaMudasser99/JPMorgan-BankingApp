@@ -21,7 +21,7 @@
   {% csrf_token %}
   <div>
     <label for="acquirer">Acquirer API key (X-API-Key for /api/authorize)</label>
-    <input id="acquirer" class="mono" type="text" placeholder="sk_..." autocomplete="off" spellcheck="false">
+    <input id="acquirer" class="mono" type="text" placeholder="sk_..." value="{{ initial_acquirer_api_key }}" autocomplete="off" spellcheck="false">
     <div class="help">The terminal sends this on every charge. If empty, <code>PAYMENT_CARDS_API_KEY</code> from Django settings is used. Saved to <code id="path"></code>.</div>
   </div>
   <div class="row buttons">
