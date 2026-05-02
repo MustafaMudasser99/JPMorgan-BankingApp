@@ -1,5 +1,6 @@
 {% extends 'banking/base.html' %}
 {% load static %}
+{% load account_tags %}
 
 {% block title %}Savings - CryptoKnights Banking{% endblock %}
 
@@ -52,7 +53,7 @@
             <div id="progress-details-container" 
                  data-goal="{{ savings_tracker.savings_goal|default:'0' }}"
                  style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-                <p class="muted">£{{ savings_tracker.current_amount }} saved of £{{ savings_tracker.savings_goal }}</p>
+                <p class="muted">£{{ savings_tracker.current_amount|format_gbp }} saved of £{{ savings_tracker.savings_goal|format_gbp }}</p>
                 <button type="button" id="reset-goal-btn" class="primary">Reset Goal</button>
             </div>
         </div>

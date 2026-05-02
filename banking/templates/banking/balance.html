@@ -24,7 +24,7 @@
           <div class="card-head">
             <div>
               <p class="eyebrow">Available funds</p>
-              <h3>£{{ total_balance }}</h3>
+              <h3>£{{ total_balance|format_gbp }}</h3>
               <p class="muted">Across all accounts</p>
             </div>
             {% if total_balance_change %}
@@ -54,7 +54,7 @@
               class="account-row account-{{ account.get_account_type_display|account_type_slug }}"
               data-account-type="{{ account.account_type }}"
             >
-              <span>{{ account.name }}</span><strong>£{{ account.get_balance }}</strong>
+              <span>{{ account.name }}</span><strong>£{{ account.get_balance|format_gbp }}</strong>
             </li>
             {% endfor %}
           </ul>
@@ -85,7 +85,7 @@
               <span>From Account</span>
               <select name="from_account" required>
                 {% for account in accounts %}
-                <option value="{{ account.id }}">{{ account.name }} - £{{ account.get_balance }}</option>
+                <option value="{{ account.id }}">{{ account.name }} - £{{ account.get_balance|format_gbp }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -93,7 +93,7 @@
               <span>To Account</span>
               <select name="to_account" required>
                 {% for account in accounts %}
-                <option value="{{ account.id }}">{{ account.name }} - £{{ account.get_balance }}</option>
+                <option value="{{ account.id }}">{{ account.name }} - £{{ account.get_balance|format_gbp }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -130,7 +130,7 @@
               <span>From Account</span>
               <select name="from_account" required>
                 {% for account in accounts %}
-                <option value="{{ account.id }}">{{ account.name }} - £{{ account.get_balance }}</option>
+                <option value="{{ account.id }}">{{ account.name }} - £{{ account.get_balance|format_gbp }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -192,7 +192,7 @@
           <span>{{ transaction.account }}</span>
           <span>{{ transaction.direction }}</span>
           <span>{{ transaction.reference }}</span>
-          <span>£{{ transaction.amount }}</span>
+          <span>£{{ transaction.amount|format_gbp }}</span>
           <span class="status {{ transaction.status|lower }}">{{ transaction.status }}</span>
           <span>{{ transaction.date }}</span>
         </div>

@@ -1,5 +1,6 @@
 {% extends "banking/base.html" %}
 {% load static %}
+{% load account_tags %}
 
 {% block title %}Bank finances · Crypto Knight{% endblock %}
 
@@ -49,16 +50,16 @@
                 <div class="stat-top">
                     <div>
                         <p class="eyebrow">Total budget</p>
-                        <h3 id="ff-total-budget">{% if finances %}£{{ finances.total_budget }}{% endif %}</h3>
+                        <h3 id="ff-total-budget">{% if finances %}£{{ finances.total_budget|format_gbp }}{% endif %}</h3>
                     </div>
                 </div>
-                <p class="muted">Issued: <span id="ff-issued">{% if finances %}£{{ finances.issued }}{% endif %}</span></p>
+                <p class="muted">Issued: <span id="ff-issued">{% if finances %}£{{ finances.issued|format_gbp }}{% endif %}</span></p>
             </article>
             <article class="card stat">
                 <div class="stat-top">
                     <div>
                         <p class="eyebrow">Remaining to issue</p>
-                        <h3 id="ff-remaining">{% if finances %}£{{ finances.remaining_to_issue }}{% endif %}</h3>
+                        <h3 id="ff-remaining">{% if finances %}£{{ finances.remaining_to_issue|format_gbp }}{% endif %}</h3>
                     </div>
                 </div>
                 <p class="muted">Headroom on new cards</p>
@@ -67,7 +68,7 @@
                 <div class="stat-top">
                     <div>
                         <p class="eyebrow">Current spendable</p>
-                        <h3 id="ff-spendable">{% if finances %}£{{ finances.current_spendable }}{% endif %}</h3>
+                        <h3 id="ff-spendable">{% if finances %}£{{ finances.current_spendable|format_gbp }}{% endif %}</h3>
                     </div>
                 </div>
                 <p class="muted">Sum of live card balances</p>
@@ -85,8 +86,8 @@
                     {% for c in finances.cards %}
                     <div class="table-row finances-card-grid">
                         <span style="font-variant-numeric: tabular-nums;">{{ c.card_number }}</span>
-                        <span>£{{ c.starting_balance }}</span>
-                        <span>£{{ c.balance }}</span>
+                        <span>£{{ c.starting_balance|format_gbp }}</span>
+                        <span>£{{ c.balance|format_gbp }}</span>
                     </div>
                     {% endfor %}
                 {% endif %}
@@ -115,7 +116,7 @@
         if (v === null || v === undefined) return "—";
         const n = Number(v);
         if (Number.isNaN(n)) return String(v);
-        return "£" + n;
+        return "£" + n.toFixed(2);
     };
 
     function applyPayload(data) {

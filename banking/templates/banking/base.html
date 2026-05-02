@@ -112,7 +112,10 @@
                     
                     // Update text
                     const amountEl = document.getElementById('modal-amount');
-                    if (amountEl) amountEl.innerText = "£" + data.amount;
+                    if (amountEl) {
+                        const a = Number(data.amount);
+                        amountEl.innerText = "£" + (Number.isFinite(a) ? a.toFixed(2) : String(data.amount));
+                    }
                     
                     // Show modal
                     modal.style.display = 'flex';
