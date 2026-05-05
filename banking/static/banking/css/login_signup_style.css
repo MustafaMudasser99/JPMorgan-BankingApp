@@ -10,13 +10,14 @@ body {
     font-family: 'Manrope', 'Segoe UI', sans-serif;
     height: 100vh;
     margin: 0;
+    background: #0f172a; /* رنگ پس‌زمینه تیره هماهنگ با تم */
 }
 
 h1 {
     font-family: inherit;
     font-weight: bold;
     margin: 0 0 10px;
-    color: var(--color-text);
+    color: var(--color-text, #ffffff);
 }
 
 p {
@@ -30,13 +31,13 @@ p {
 span {
     font-family: inherit;
     font-size: 12px;
-    color: var(--color-muted);
+    color: #94a3b8;
     margin-bottom: 10px;
 }
 
 a {
     font-family: inherit;
-    color: var(--color-secondary);
+    color: #22d3ee;
     font-size: 14px;
     text-decoration: none;
     margin: 15px 0;
@@ -44,33 +45,23 @@ a {
 }
 
 a:hover {
-    color: var(--color-primary);
+    color: #4ade80;
 }
 
 button {
     font-family: inherit;
     border-radius: 8px;
     border: 1px solid transparent;
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    color: var(--color-text);
+    background: linear-gradient(135deg, #22d3ee, #4ade80);
+    color: #0f172a;
     font-size: 12px;
     font-weight: bold;
     padding: 12px 45px;
     letter-spacing: 1px;
     text-transform: uppercase;
-    transition: all 0.3s ease-in;
+    transition: transform 80ms ease-in, background 0.3s ease;
     cursor: pointer;
     margin-top: 10px;
-}
-
-.sign-in-container h1,
-.sign-in-container a,
-.sign-in-container button {
-    color: var(--color-text);
-}
-
-.sign-in-container span {
-    color: var(--color-muted);
 }
 
 button:active {
@@ -84,13 +75,11 @@ button.ghost {
 }
 
 button.ghost:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 form {
-    background-color: var(--color-panel);
-    border: 1px solid var(--color-border);
-    color: var(--color-text);
+    background-color: #1e293b;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -100,19 +89,11 @@ form {
     text-align: center;
 }
 
-form p {
-    color: var(--color-muted);
-}
-
-form span {
-    color: var(--color-muted);
-}
-
 input {
     font-family: inherit;
-    background-color: #0c1323;
-    border: 1px solid var(--color-border);
-    color: var(--color-text);
+    background-color: rgba(15, 23, 42, 0.5);
+    border: 1px solid #334155;
+    color: #ffffff;
     padding: 12px 15px;
     margin: 8px 0;
     width: 100%;
@@ -122,15 +103,15 @@ input {
 
 input:focus {
     outline: none;
-    border-color: rgba(255, 255, 255, 0.18);
-    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.12);
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.2);
 }
 
 .container {
-    background-color: var(--color-panel);
+    background-color: #1e293b;
     border-radius: 20px;
-    border: 1px solid var(--color-border);
-    box-shadow: var(--shadow);
+    border: 1px solid #334155;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     position: relative;
     overflow: hidden;
     width: 850px;
@@ -138,45 +119,25 @@ input:focus {
     min-height: 520px;
 }
 
-.sign-in-container form,
-.sign-up-container form {
-    background: linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.06) 0%,
-        rgba(255, 255, 255, 0.03) 100%
-    );
-    border: 1px solid rgba(255, 255, 255, 0.10);
-    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
-}
-
-input::placeholder {
-    color: rgba(159, 178, 208, 0.8);
-}
-
-input {
-    background-color: rgba(255, 255, 255, 0.04);
-}
-
-button.ghost {
-    border-color: rgba(255, 255, 255, 0.75);
-    color: rgba(255, 255, 255, 0.92);
-}
-
 .form-container {
     position: absolute;
     top: 0;
     height: 100%;
-    transition: all 0.6s ease-in-out;
+    /* انیمیشن نرم‌تر با cubic-bezier */
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .sign-in-container {
     left: 0;
     width: 50%;
     z-index: 2;
+    opacity: 1;
 }
 
 .container.right-panel-active .sign-in-container {
     transform: translateX(100%);
+    opacity: 0 !important;
+    visibility: hidden;
 }
 
 .sign-up-container {
@@ -184,12 +145,14 @@ button.ghost {
     width: 50%;
     opacity: 0;
     z-index: 1;
+    visibility: hidden;
 }
 
 .container.right-panel-active .sign-up-container {
     transform: translateX(100%);
-    opacity: 1;
-    z-index: 5;
+    opacity: 1 !important;
+    z-index: 5 !important;
+    visibility: visible;
     animation: show 0.6s;
 }
 
@@ -211,7 +174,7 @@ button.ghost {
     width: 50%;
     height: 100%;
     overflow: hidden;
-    transition: transform 0.6s ease-in-out;
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     z-index: 100;
 }
 
@@ -220,14 +183,16 @@ button.ghost {
 }
 
 .overlay {
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.25) 0%, rgba(74, 222, 128, 0.22) 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background-size: cover;
+    background-repeat: no-repeat;
     color: #ffffff;
     position: relative;
     left: -100%;
     height: 100%;
     width: 200%;
     transform: translateX(0);
-    transition: transform 0.6s ease-in-out;
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .container.right-panel-active .overlay {
@@ -246,11 +211,13 @@ button.ghost {
     height: 100%;
     width: 50%;
     transform: translateX(0);
-    transition: transform 0.6s ease-in-out;
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
 .overlay-left {
     transform: translateX(-20%);
+    /* رنگ تیره پنل چپ */
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.2), rgba(74, 222, 128, 0.2));
 }
 
 .container.right-panel-active .overlay-left {
@@ -260,31 +227,10 @@ button.ghost {
 .overlay-right {
     right: 0;
     transform: translateX(0);
+    /* رنگ تیره پنل راست */
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
 }
 
 .container.right-panel-active .overlay-right {
     transform: translateX(20%);
-}
-
-.social-container {
-    margin: 20px 0;
-}
-
-.social-container a {
-    border: 1px solid var(--color-border);
-    border-radius: 50%;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 5px;
-    height: 40px;
-    width: 40px;
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--color-secondary);
-}
-
-.social-container a:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--color-text);
-    border-color: rgba(255, 255, 255, 0.18);
 }
