@@ -3,6 +3,7 @@ URL configuration for extra_credit_union project.
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from banking.auth_views import LoginView, UserAccountsView
@@ -26,7 +27,14 @@ from banking.template_views import (
 from banking.login_views import LoginView as WebLoginView, logout_view, api_login
 from banking.views import merchant_payment_request, TransactionViewSet, check_payment_status
 
+
+def smart_entry(request):
+    if request.user.is_authenticated:
+        return redirect("dashboard")
+    return redirect("login")
+
 urlpatterns = [
+    path("", smart_entry, name="smart-entry"),
     path('admin/', admin.site.urls),
     path('api/', include('banking.urls')),
     
